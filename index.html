@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【時光脈動・老台東】智慧導覽路線圖</title>
+    <title>【時光脈動・老台東】智慧導覽</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -11,24 +11,37 @@
         
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f4f1ea;
+            background-color: #f8f5f0;
             color: #4a3f35;
         }
 
-        .map-container {
+        /* 模擬地圖背景：增加街道質感 */
+        .map-canvas {
             position: relative;
-            background: #e5e0d3;
+            background-color: #e5e0d3;
+            background-image: 
+                linear-gradient(#dcd7c9 2px, transparent 2px),
+                linear-gradient(90deg, #dcd7c9 2px, transparent 2px);
+            background-size: 50px 50px;
             border: 2px solid #8d7b68;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            aspect-ratio: 16/9;
-            min-height: 400px;
+            aspect-ratio: 16/10;
+            min-height: 450px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        /* 模擬主要街道線條 */
+        .street-line {
+            position: absolute;
+            background: #d1ccbc;
+            z-index: 1;
         }
 
         .map-point {
             position: absolute;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             background: #c2410c;
             border: 3px solid white;
             border-radius: 50%;
@@ -37,89 +50,149 @@
             align-items: center;
             justify-content: center;
             color: white;
-            transition: transform 0.3s, background 0.3s;
+            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .map-point:hover {
-            transform: scale(1.2);
+            transform: scale(1.3) rotate(10deg);
             background: #9a3412;
+            z-index: 20;
         }
 
         .map-point.active {
             background: #164e63;
-            box-shadow: 0 0 15px rgba(22, 78, 99, 0.5);
+            box-shadow: 0 0 20px rgba(22, 78, 99, 0.6);
+            transform: scale(1.2);
+        }
+
+        .map-label {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            color: #4a3f35;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            pointer-events: none;
+            border: 1px solid #ddd;
         }
 
         .station-card {
             transition: all 0.3s ease;
+            border-left: 4px solid transparent;
         }
 
         .station-card.active {
-            border-left: 6px solid #c2410c;
-            background-color: white;
-            transform: translateX(10px);
+            border-left-color: #c2410c;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transform: translateX(8px);
         }
 
         .gemini-gradient {
             background: linear-gradient(135deg, #4285f4, #9b51e0, #e91e63);
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .road-name {
+            position: absolute;
+            color: #a8a294;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            z-index: 2;
+            pointer-events: none;
         }
-        .animate-slide-in {
-            animation: slideIn 0.3s ease-out;
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
+        .pulse-active { animation: pulse 2s infinite; }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-        <header class="bg-[#8d7b68] text-white p-6 text-center relative">
-            <h1 class="text-3xl md:text-4xl font-bold mb-2">【時光脈動・老台東】</h1>
-            <p class="text-lg opacity-90 italic">從日治行政到戲院遺蹤的庶民走讀</p>
-            <button onclick="toggleAIChat()" class="absolute right-6 bottom-4 gemini-gradient text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform flex items-center">
-                <i class="fa-solid fa-robot mr-2"></i> ✨ 智慧嚮導
-            </button>
+<body class="p-2 md:p-6">
+    <div class="max-w-7xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
+        <!-- 導覽標題欄 -->
+        <header class="bg-[#8d7b68] text-white p-6 md:p-8 text-center relative">
+            <div class="inline-block bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs mb-3 tracking-widest uppercase">Taitung Heritage Walk</div>
+            <h1 class="text-3xl md:text-5xl font-bold mb-2 tracking-tight">時光脈動・老台東</h1>
+            <p class="text-sm md:text-lg opacity-80 font-light">日治行政遺跡 ✕ 庶民戲院回憶 ✕ 智慧聲景走讀</p>
+            
+            <div class="flex justify-center gap-3 mt-4">
+                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg hover:brightness-110 transition-all flex items-center">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 智慧領隊
+                </button>
+                <button onclick="shareTour()" class="bg-white/10 hover:bg-white/20 border border-white/30 px-5 py-2 rounded-full text-sm font-bold flex items-center">
+                    <i class="fa-solid fa-share-nodes mr-2"></i> 分享導覽
+                </button>
+            </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3">
-            <div class="p-6 lg:border-r border-gray-100 bg-stone-50 overflow-y-auto max-h-[800px]">
-                <div class="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 rounded">
-                    <p class="text-sm font-bold text-orange-800"><i class="fa-solid fa-person-walking mr-2"></i>步行路線概覽</p>
-                    <p class="text-xs text-orange-700 mt-1">起點：新生路與中山路口 | 全長約 1.5km</p>
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+            <!-- 左側景點清單 -->
+            <div class="lg:col-span-4 p-4 md:p-6 bg-stone-50 border-r border-gray-100 overflow-y-auto max-h-[850px]">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="font-bold text-stone-800 flex items-center"><i class="fa-solid fa-map-location-dot mr-2 text-orange-700"></i>走讀路線站點</h2>
+                    <span class="text-[10px] bg-stone-200 px-2 py-1 rounded-full text-stone-500">共 5 站</span>
                 </div>
-                <div class="space-y-4" id="station-list"></div>
+                <div class="space-y-3" id="station-list"></div>
+                
+                <div class="mt-8 p-4 bg-white border border-dashed border-stone-300 rounded-xl">
+                    <p class="text-xs text-stone-500 leading-relaxed italic text-center">
+                        「少年家，點點地圖上的點，<br>讓我帶你走進那些被火燒掉、被時光遺忘的故事。」
+                    </p>
+                </div>
             </div>
 
-            <div class="col-span-2 p-6 bg-white relative">
-                <div class="map-container mb-6 shadow-inner relative">
-                    <div id="map-points"></div>
-                    <div class="absolute bottom-2 right-2 bg-white/80 p-2 rounded text-[10px] border border-stone-300">
-                        <p><i class="fa-solid fa-location-dot text-orange-700 mr-1"></i> 點擊點位可切換景點</p>
-                    </div>
+            <!-- 右側互動地圖與詳細資訊 -->
+            <div class="lg:col-span-8 p-4 md:p-6 bg-white relative">
+                <!-- 智慧擬真地圖 -->
+                <div class="map-canvas mb-6 relative" id="map-area">
+                    <!-- 模擬街道圖層 -->
+                    <div class="street-line w-full h-8 top-[40%]"></div> <!-- 中正路 -->
+                    <div class="street-line w-8 h-full left-[60%]"></div> <!-- 中山路 -->
+                    <div class="street-line w-full h-6 top-[70%] -rotate-2"></div> <!-- 大同路 -->
+                    <div class="street-line w-6 h-full left-[25%] rotate-3"></div> <!-- 光明路 -->
+                    
+                    <div class="road-name top-[35%] left-[5%]">中正路</div>
+                    <div class="road-name top-[65%] left-[80%] -rotate-2">大同路</div>
+                    <div class="road-name top-[10%] left-[62%] rotate-90">中山路</div>
+
+                    <!-- 景點點位 -->
+                    <div id="map-points-container"></div>
                 </div>
 
-                <div id="details-box" class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm min-h-[400px] relative">
-                    <div id="station-detail"></div>
+                <!-- 景點內容顯示區 -->
+                <div id="details-box" class="bg-stone-50 rounded-2xl p-6 border border-stone-200 shadow-sm relative min-h-[350px]">
+                    <div id="station-detail" class="animate-slide-in"></div>
                 </div>
 
-                <div id="ai-chat-window" class="hidden absolute inset-4 bg-white/95 z-50 rounded-xl shadow-2xl border-2 border-purple-100 flex flex-col overflow-hidden animate-slide-in">
-                    <div class="gemini-gradient p-4 text-white flex justify-between items-center">
+                <!-- AI 對話視窗 -->
+                <div id="ai-chat-window" class="hidden absolute inset-4 bg-white/98 z-50 rounded-2xl shadow-2xl border border-purple-100 flex flex-col overflow-hidden animate-slide-in">
+                    <div class="gemini-gradient p-4 text-white flex justify-between items-center shadow-md">
                         <div class="flex items-center">
-                            <i class="fa-solid fa-robot mr-3 text-xl"></i>
+                            <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                                <i class="fa-solid fa-robot text-xl"></i>
+                            </div>
                             <div>
-                                <h3 class="font-bold">✨ Gemini 台東文史嚮導</h3>
-                                <p class="text-[10px] opacity-80">具備歷史洞察與語音合成能力</p>
+                                <h3 class="font-bold">Gemini 老台東領隊</h3>
+                                <p class="text-[10px] opacity-80">具備歷史情境還原技術</p>
                             </div>
                         </div>
-                        <button onclick="toggleAIChat()" class="hover:bg-white/20 p-2 rounded-full"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="toggleAIChat()" class="hover:bg-white/20 w-8 h-8 rounded-full transition-colors flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm scroll-smooth"></div>
-                    <div class="p-4 border-t border-gray-100 bg-gray-50 flex gap-2">
-                        <input type="text" id="ai-input" placeholder="問問台東的歷史..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none">
-                        <button onclick="askAI()" id="ai-send-btn" class="gemini-gradient text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md">
+                    <div id="chat-history" class="flex-1 overflow-y-auto p-5 space-y-4 text-sm scroll-smooth bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
+                    <div class="p-4 bg-white border-t border-gray-100 flex gap-2">
+                        <input type="text" id="ai-input" placeholder="試著問：大同戲院以前賣什麼零食？" class="flex-1 border border-stone-200 rounded-full px-5 py-3 text-sm focus:ring-2 focus:ring-purple-500 outline-none shadow-inner">
+                        <button onclick="askAI()" id="ai-send-btn" class="gemini-gradient text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -128,215 +201,146 @@
         </div>
     </div>
 
+    <!-- 提示框 -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-6 py-3 rounded-full text-sm shadow-2xl opacity-0 transition-opacity pointer-events-none z-[100]">
+        連結已複製到剪貼簿！
+    </div>
+
     <script>
         const apiKey = ""; 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+        // 景點資料庫（含精確座標與導覽稿）
         const stations = {
             1: {
                 title: "中央市場",
                 subtitle: "台東人的靈魂胃袋",
-                desc: "1963年正式啟用，是台東規模最大、人情味最濃的傳統市場。這裡藏著傳奇人物陳樹菊女士的菜攤。",
+                desc: "1963年啟用，這裡不只是陳樹菊女士菜攤所在地，更是台東人生活物資的集散地。清晨的叫賣聲交織出最樸實的生命力。",
                 icon: "fa-basket-shopping",
-                coords: { top: "70%", left: "20%" },
-                prompt: "告訴我更多關於台東中央市場的歷史與陳樹菊女士的事蹟。"
+                coords: { top: "65%", left: "22%" },
+                prompt: "告訴我關於台東中央市場的歷史，以及它跟周邊居民生活的緊密關係。"
             },
             2: {
                 title: "寶町藝文中心",
-                subtitle: "日治官舍重生",
-                desc: "建於1936年，原為台東街役場宿舍群。這組道地的日式木構造建築，見證了日治時期官員的生活空間。",
+                subtitle: "日治官舍的靜謐重生",
+                desc: "原為台東街役場宿舍群，建於1936年。在繁華的市中心保留了完整的木構造宿舍，走在長廊上彷彿能聽見當年的黑膠唱片聲。",
                 icon: "fa-house-chimney",
-                coords: { top: "30%", left: "20%" },
-                prompt: "請詳細介紹寶町藝文中心的日式建築特色與當時的生活情境。"
+                coords: { top: "25%", left: "28%" },
+                prompt: "請描述寶町藝文中心的建築特色，以及它在日治時期扮演的角色。"
             },
             3: {
                 title: "中華會館",
-                subtitle: "全台唯一的華僑見證",
-                desc: "1927年由旅台華僑集資興建，其巴洛克山牆上的稻穗與黨徽鑲嵌，記錄了台東華僑的抗日與團結歷史。",
+                subtitle: "台東華僑的抗日堡壘",
+                desc: "1927年落成。山牆上的稻穗裝飾與精緻泥塑，訴說著當年旅台華僑在此集會、守護家園的熱血故事。",
                 icon: "fa-landmark",
                 coords: { top: "15%", left: "55%" },
-                prompt: "中華會館在抗日時期扮演什麼角色？對台東華僑的意義為何？"
+                prompt: "中華會館在台東歷史上的獨特性是什麼？它見證了哪些重要時刻？"
             },
             4: {
-                title: "大同市場攤販部",
-                subtitle: "時光遺落的角落",
-                desc: "整合導覽：來來來，少年家，先坐一下，這杯紅烏龍趁熱喝。你問起「大同戲院」啊？它簡直就是當時台東人的「精神客廳」與「心臟」。民國47年開幕時是多氣派的地標！門口總是飄著炭烤魷魚與玉米的焦香，手繪的海報下擠滿了穿著平整襯衫與漂亮裙子的少男少女。它撐起了周圍的銀樓、西服店與冰果室，是大同路的黃金年代。雖然後來隨火車站搬遷與2009年的一場大火而落幕，但那種「大家聚在一起做夢」的精神，至今仍活在老台東人的話語裡。",
+                title: "大同戲院遺蹤",
+                subtitle: "台東的西門町與心臟",
+                desc: "整合導覽：少年家，先坐一下。民國47年開幕時，這裡是大同路的繁華中心。烤魷魚的味道混著放映機「噠噠噠」的聲音，那是老台東人的共同儀式感。雖然後來隨舊火車站廢站及2009年火災而沒落，但那份在大同路「做夢」的記憶永遠不滅。",
                 icon: "fa-film",
-                coords: { top: "45%", left: "65%" },
-                prompt: "請以整合後的內容為基礎，跟我分享大同戲院從全盛到落幕的故事。"
+                coords: { top: "62%", left: "62%" },
+                prompt: "請以導覽稿內容為基礎，跟我說大同戲院跟舊火車站興衰的感人故事。"
             },
             5: {
                 title: "觀光夜市 (正氣路)",
-                subtitle: "晝夜交替的活力",
-                desc: "正氣路在白天是著名水果街，晚上則轉身為觀光夜市，體現了台東人靈活且充滿生命力的生活。",
+                subtitle: "晝夜切換的活歷史",
+                desc: "白天是充滿果香的水果街，晚上化身為熱鬧非凡的夜市。這裡是老街道轉型觀光最成功的案例，體現了台東人的生命彈性。",
                 icon: "fa-utensils",
-                coords: { top: "75%", left: "50%" },
-                prompt: "描述台東正氣路從清晨水果批發到深夜夜市的日常轉變。"
+                coords: { top: "78%", left: "48%" },
+                prompt: "台東正氣路是如何從傳統的水果街轉型為觀光夜市的？"
             }
         };
 
-        let currentStationId = 1;
-
-        function initStations() {
+        function initApp() {
             const list = document.getElementById('station-list');
-            const mapPoints = document.getElementById('map-points');
+            const mapPoints = document.getElementById('map-points-container');
+            
             Object.keys(stations).forEach(id => {
                 const s = stations[id];
+                // 渲染左側卡片
                 list.innerHTML += `
-                    <div id="card-${id}" class="station-card p-4 rounded-lg cursor-pointer hover:bg-white border border-transparent" onclick="selectStation(${id})">
-                        <h3 class="font-bold text-lg flex items-center">
-                            <span class="w-6 h-6 bg-orange-700 text-white rounded-full text-xs flex items-center justify-center mr-2">${id}</span>
-                            ${s.title}
-                        </h3>
+                    <div id="card-${id}" class="station-card p-4 rounded-xl cursor-pointer hover:bg-stone-100 group border border-stone-200 bg-white/50" onclick="selectStation(${id})">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 flex-shrink-0 bg-stone-200 text-stone-600 rounded-full text-sm font-bold flex items-center justify-center group-hover:bg-orange-700 group-hover:text-white transition-colors">${id}</span>
+                            <div>
+                                <h3 class="font-bold text-stone-800 text-base">${s.title}</h3>
+                                <p class="text-[10px] text-stone-500 uppercase tracking-wider">${s.subtitle}</p>
+                            </div>
+                        </div>
                     </div>
                 `;
+                // 渲染地圖點位
                 mapPoints.innerHTML += `
-                    <div id="point-${id}" class="map-point" style="top: ${s.coords.top}; left: ${s.coords.left};" onclick="selectStation(${id})">${id}</div>
+                    <div id="point-${id}" class="map-point" style="top: ${s.coords.top}; left: ${s.coords.left};" onclick="selectStation(${id})">
+                        ${id}
+                        <div class="map-label">${s.title}</div>
+                    </div>
                 `;
             });
             selectStation(1);
         }
 
         function selectStation(id) {
-            currentStationId = id;
-            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('active', 'bg-white', 'border-gray-200'));
-            document.querySelectorAll('.map-point').forEach(p => p.classList.remove('active'));
-            document.getElementById(`card-${id}`).classList.add('active', 'bg-white', 'border-gray-200');
-            document.getElementById(`point-${id}`).classList.add('active');
+            document.querySelectorAll('.station-card, .map-point').forEach(el => el.classList.remove('active', 'pulse-active'));
+            document.getElementById(`card-${id}`).classList.add('active');
+            document.getElementById(`point-${id}`).classList.add('active', 'pulse-active');
 
             const s = stations[id];
-            document.getElementById('station-detail').innerHTML = `
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h2 class="text-3xl font-bold text-stone-800 mb-1">${s.title}</h2>
-                        <p class="text-orange-700 font-bold flex items-center"><i class="fa-solid ${s.icon} mr-2"></i> ${s.subtitle}</p>
+            const detail = document.getElementById('station-detail');
+            detail.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded-full font-bold">第 ${id} 站</span>
+                            <span class="text-stone-300">|</span>
+                            <i class="fa-solid ${s.icon} text-stone-400"></i>
+                        </div>
+                        <h2 class="text-3xl font-black text-stone-800 mb-2">${s.title}</h2>
+                        <p class="text-orange-700 text-sm font-bold flex items-center">${s.subtitle}</p>
                     </div>
-                    <div class="flex flex-col gap-2 items-end">
-                         <button id="tts-ai-btn" onclick="generateDynamicTour(${id})" class="gemini-gradient text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ 產製 AI 劇本導覽
-                        </button>
-                    </div>
+                    <button onclick="generateDynamicTour(${id})" id="tts-btn-${id}" class="bg-white border border-stone-200 shadow-sm px-6 py-3 rounded-2xl hover:bg-stone-100 transition-all flex items-center gap-2 text-stone-700 font-bold group">
+                        <i class="fa-solid fa-volume-high text-orange-600 group-hover:scale-110 transition-transform"></i>
+                        AI 語音導覽
+                    </button>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div class="space-y-4">
-                        <p class="text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-lg border border-stone-100">${s.desc}</p>
-                        <div class="flex gap-2">
-                             <button onclick="toggleAIChat('${s.prompt}')" class="flex-1 bg-purple-100 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-200 transition-colors">✨ 詢問 AI 故事</button>
-                             <button onclick="visualizeHistory(${id})" class="flex-1 bg-blue-100 text-blue-700 border border-blue-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition-colors">✨ 懷舊意象生成</button>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div class="md:col-span-3">
+                        <p class="text-stone-600 leading-relaxed text-base mb-6 bg-white p-5 rounded-2xl border border-stone-100 shadow-inner">
+                            ${s.desc}
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="toggleAIChat('${s.prompt}')" class="flex-1 min-w-[140px] bg-purple-50 text-purple-700 border border-purple-100 py-3 rounded-xl text-xs font-bold hover:bg-purple-100 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-sparkles"></i> 挖掘歷史細節
+                            </button>
+                            <button onclick="visualizeHistory(${id})" class="flex-1 min-w-[140px] bg-sky-50 text-sky-700 border border-sky-100 py-3 rounded-xl text-xs font-bold hover:bg-sky-100 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-image"></i> 生成時光顯影
+                            </button>
                         </div>
                     </div>
-                    <div id="visualizer-container" class="bg-stone-100 rounded-lg overflow-hidden border border-stone-200 min-h-[180px] flex items-center justify-center relative">
-                         <p class="text-stone-400 text-xs italic p-4 text-center">點擊上方按鈕，由 Gemini 描繪該景點的歷史意象圖...</p>
+                    <div id="visualizer-container" class="md:col-span-2 bg-stone-200 rounded-2xl overflow-hidden min-h-[220px] flex items-center justify-center relative border-2 border-white shadow-md">
+                        <p class="text-stone-400 text-[10px] italic p-6 text-center">點擊按鈕，讓 AI 為您繪製<br>「${s.title}」的昔日風華</p>
                     </div>
                 </div>
             `;
         }
 
-        async function generateDynamicTour(id) {
-            const btn = document.getElementById('tts-ai-btn');
-            const station = stations[id];
-            const originalHTML = btn.innerHTML;
+        // 分享導覽網址功能
+        function shareTour() {
+            const url = window.location.href;
+            const tempInput = document.createElement("input");
+            document.body.appendChild(tempInput);
+            tempInput.value = url;
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
             
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 撰寫劇本中...`;
-            btn.disabled = true;
-
-            try {
-                const textResponse = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `你是一位精通台東文史的老導覽員，請根據以下整合資訊，為景點「${station.title}」撰寫一段約 150 字的口語化導覽稿。要包含其歷史地位、一個關於氣味或視覺的細節，並用一種懷舊且溫暖的語氣。整合資訊：${station.desc}` }] }]
-                    })
-                });
-                
-                const textData = await textResponse.json();
-                const script = textData.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!script) throw new Error("劇本生成失敗");
-
-                btn.innerHTML = `<i class="fa-solid fa-microphone-lines fa-pulse"></i> ✨ 語音合成中...`;
-                
-                const ttsResponse = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: script }] }],
-                        generationConfig: {
-                            responseModalities: ["AUDIO"],
-                            speechConfig: {
-                                voiceConfig: { 
-                                    prebuiltVoiceConfig: { voiceName: "Kore" } 
-                                }
-                            }
-                        }
-                    })
-                });
-                const ttsData = await ttsResponse.json();
-                const audioBase64 = ttsData.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-
-                if (!audioBase64) throw new Error("音訊生成失敗");
-
-                const audioBlob = pcmToWav(audioBase64, 24000);
-                const url = URL.createObjectURL(audioBlob);
-                const audio = new Audio(url);
-                
-                audio.onplay = () => btn.innerHTML = `<i class="fa-solid fa-play"></i> 正在播放 AI 導覽...`;
-                audio.onended = () => {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    URL.revokeObjectURL(url);
-                };
-                await audio.play();
-
-            } catch (err) {
-                console.error("Tour Generation Error:", err);
-                btn.innerHTML = `<i class="fa-solid fa-circle-exclamation text-red-500"></i> 導覽稍後重試`;
-                setTimeout(() => { btn.innerHTML = originalHTML; btn.disabled = false; }, 3000);
-            }
-        }
-
-        async function visualizeHistory(id) {
-            const container = document.getElementById('visualizer-container');
-            const station = stations[id];
-            
-            container.innerHTML = `
-                <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-stone-100">
-                    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                    <p class="text-xs text-blue-600 font-bold">✨ Gemini 正在繪製懷舊意象...</p>
-                </div>
-            `;
-
-            try {
-                const promptText = `A cinematic, nostalgic oil painting style image of ${station.title} in Taitung during the 1960s. Show traditional architecture, old shop signs with traditional Chinese characters, vintage bicycles, and people in 60s attire. Warm morning light, slightly faded colors, high detail, historical atmosphere.`;
-                
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        instances: [{ prompt: promptText }],
-                        parameters: { sampleCount: 1 }
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-                    const imageUrl = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
-                    container.innerHTML = `
-                        <img src="${imageUrl}" class="w-full h-full object-cover animate-slide-in" alt="AI Generated History">
-                        <div class="absolute bottom-0 inset-x-0 bg-black/50 p-2 text-[10px] text-white backdrop-blur-sm">
-                            ✨ AI 模擬之懷舊意象
-                        </div>
-                    `;
-                } else {
-                    throw new Error("Invalid image data received");
-                }
-            } catch (err) {
-                console.error("VisualizeHistory Error:", err);
-                const msg = err.message.includes("Auth Error") ? "金鑰驗證失敗 (401)" : "繪圖暫時休息中，請稍後重試。";
-                container.innerHTML = `<p class="text-red-400 text-xs p-4 text-center">${msg}</p>`;
-            }
+            const toast = document.getElementById('toast');
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 3000);
         }
 
         async function askAI(customPrompt = null) {
@@ -345,10 +349,10 @@
             const query = customPrompt || input.value.trim();
             if (!query) return;
 
-            history.innerHTML += `<div class="flex justify-end"><div class="bg-purple-600 text-white p-3 rounded-lg max-w-[85%] shadow-sm">${query}</div></div>`;
+            history.innerHTML += `<div class="flex justify-end"><div class="bg-purple-600 text-white p-3 rounded-2xl max-w-[85%] shadow-md rounded-tr-none text-sm">${query}</div></div>`;
             input.value = "";
             const loadingId = "load-" + Date.now();
-            history.innerHTML += `<div id="${loadingId}" class="flex justify-start"><div class="bg-gray-100 p-3 rounded-lg text-gray-500 italic flex items-center gap-2"><i class="fa-solid fa-sparkles animate-pulse"></i> 搜尋歷史卷軸中...</div></div>`;
+            history.innerHTML += `<div id="${loadingId}" class="flex justify-start"><div class="bg-white/80 p-3 rounded-2xl text-stone-500 italic text-xs animate-pulse flex items-center gap-2"><i class="fa-solid fa-scroll"></i> 老領隊正在回憶中...</div></div>`;
             history.scrollTop = history.scrollHeight;
 
             try {
@@ -357,54 +361,95 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: query }] }],
-                        systemInstruction: { parts: [{ text: "你是一位精通台東文史的在地嚮導，專長是將乾澀的史料轉化為動人的庶民故事。請用親切、帶點懷舊情感的口吻回答。特別是對於「大同戲院」，請連結它作為台東心臟、西門町以及與舊火車站商圈興衰的關係。你的對話要像是在午後巷弄裡跟遊客聊天一樣自然。" }] }
+                        systemInstruction: { parts: [{ text: "你是一位精通台東文史的「領隊嚮導」，語氣要溫暖、富有歷史畫面感。針對台東市大同路一帶的轉變要非常了解。請用繁體中文回答，像是帶著團員在小巷中穿梭時的耳語解說。" }] }
                     })
                 });
                 const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "哎呀，這段記憶似乎隱沒在太平洋的浪潮中了，請稍後再問我。";
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，這段回憶有點模糊了。";
                 
-                const loader = document.getElementById(loadingId);
-                if (loader) loader.remove();
-                history.innerHTML += `<div class="flex justify-start"><div class="bg-white border border-purple-100 p-3 rounded-lg max-w-[85%] border-l-4 border-purple-500 shadow-sm leading-relaxed">${text}</div></div>`;
+                document.getElementById(loadingId).remove();
+                history.innerHTML += `<div class="flex justify-start"><div class="bg-white border border-stone-200 p-4 rounded-2xl max-w-[90%] shadow-sm rounded-tl-none leading-relaxed text-sm text-stone-700">${text}</div></div>`;
                 history.scrollTop = history.scrollHeight;
             } catch (err) {
-                console.error("AskAI Error:", err);
-                const loader = document.getElementById(loadingId);
-                if (loader) loader.innerHTML = `<span class="text-red-400 text-xs">老嚮導連線不穩 (${err.message})，請重試。</span>`;
+                document.getElementById(loadingId).innerHTML = `<span class="text-red-500">連線暫中斷，請稍後。</span>`;
+            }
+        }
+
+        async function visualizeHistory(id) {
+            const container = document.getElementById('visualizer-container');
+            const station = stations[id];
+            container.innerHTML = `<div class="flex flex-col items-center"><i class="fa-solid fa-palette text-sky-500 animate-bounce mb-2"></i><p class="text-[10px] text-sky-600 font-bold">正在繪製時光圖紙...</p></div>`;
+
+            try {
+                const prompt = `A cinematic, nostalgic watercolor painting of ${station.title} in Taitung, Taiwan during the 1950s. Show historical architectural details, warm sepia tones, vintage street atmosphere, high detail.`;
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        instances: [{ prompt: prompt }],
+                        parameters: { sampleCount: 1 }
+                    })
+                });
+                const data = await response.json();
+                const imageUrl = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+                container.innerHTML = `<img src="${imageUrl}" class="w-full h-full object-cover animate-fade-in" alt="AI Generated History">`;
+            } catch (err) {
+                container.innerHTML = `<p class="text-stone-400 text-xs text-center p-4">繪圖暫時休息中</p>`;
+            }
+        }
+
+        async function generateDynamicTour(id) {
+            const btn = document.getElementById(`tts-btn-${id}`);
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 生成中`;
+            btn.disabled = true;
+
+            try {
+                const textResponse = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `請為「${stations[id].title}」撰寫一段約 120 字的台語口吻（但用繁體中文寫成）的導覽介紹，要包含當地的特色與回憶。資訊內容：${stations[id].desc}` }] }]
+                    })
+                });
+                const script = (await textResponse.json()).candidates[0].content.parts[0].text;
+
+                const ttsResponse = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: script }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } }
+                        }
+                    })
+                });
+                const ttsData = await ttsResponse.json();
+                const audioBase64 = ttsData.candidates[0].content.parts.find(p => p.inlineData).inlineData.data;
+                const audio = new Audio(URL.createObjectURL(pcmToWav(audioBase64, 24000)));
+                audio.play();
+                btn.innerHTML = `<i class="fa-solid fa-circle-play text-green-500"></i> 播放中`;
+                audio.onended = () => { btn.innerHTML = originalHTML; btn.disabled = false; };
+            } catch (err) {
+                btn.innerHTML = originalHTML; btn.disabled = false;
             }
         }
 
         async function fetchWithRetry(url, options, maxRetries = 5) {
-            let lastError = null;
             let delay = 1000;
-            const finalUrl = url.includes('?') ? `${url}&key=${apiKey}` : `${url}?key=${apiKey}`;
-
+            const finalUrl = `${url}${url.includes('?') ? '&' : '?'}key=${apiKey}`;
             for (let i = 0; i < maxRetries; i++) {
                 try {
                     const response = await fetch(finalUrl, options);
-                    if (!response.ok) {
-                        let errorMsg = `Status ${response.status}`;
-                        try {
-                            const errorJson = await response.json();
-                            errorMsg = errorJson.error?.message || errorMsg;
-                        } catch (e) { }
-                        if (response.status === 401) throw new Error(`Auth Error: ${errorMsg}`);
-                        if (response.status === 429 || response.status >= 500) {
-                            throw new Error(errorMsg);
-                        } else {
-                            throw new Error(`Client Error: ${errorMsg}`);
-                        }
-                    }
-                    const data = await response.json();
-                    return { ok: true, json: () => Promise.resolve(data) };
+                    if (!response.ok) throw new Error("Retryable error");
+                    return response;
                 } catch (err) {
-                    lastError = err;
-                    if (err.message.includes("Auth Error") || err.message.includes("Client Error")) break; 
+                    if (i === maxRetries - 1) throw err;
                     await new Promise(r => setTimeout(r, delay));
                     delay *= 2;
                 }
             }
-            throw lastError || new Error("Fetch Failed");
         }
 
         function pcmToWav(base64, sampleRate) {
@@ -434,12 +479,10 @@
         function toggleAIChat(prompt = null) {
             const win = document.getElementById('ai-chat-window');
             win.classList.toggle('hidden');
-            if (prompt && !win.classList.contains('hidden')) {
-                askAI(prompt);
-            }
+            if (prompt && !win.classList.contains('hidden')) askAI(prompt);
         }
 
-        window.onload = initStations;
+        window.onload = initApp;
     </script>
 </body>
 </html>
