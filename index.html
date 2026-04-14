@@ -110,8 +110,8 @@
             <h1 class="text-2xl md:text-4xl font-bold mb-1">時光脈動・老台東</h1>
             <p class="text-xs md:text-base opacity-90">智慧聲景走讀導覽</p>
             <div class="flex justify-center gap-2 mt-4">
-                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-4 py-2 rounded-full text-xs font-bold flex items-center shadow-md">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 智慧領隊
+                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-4 py-2 rounded-full text-xs font-bold flex items-center shadow-md hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> ✨ 智慧領隊
                 </button>
                 <button onclick="shareTour()" class="bg-white/20 px-4 py-2 rounded-full text-xs font-bold flex items-center">
                     <i class="fa-solid fa-share-nodes mr-2"></i> 分享
@@ -131,24 +131,36 @@
                 <div class="map-canvas mb-4 relative" id="map-area">
                     <div class="street-line w-full h-6 top-[40%]"></div>
                     <div class="street-line w-6 h-full left-[60%]"></div>
-                    <div class="road-name top-[35%] left-[5%]">中正路</div>
+                    <div class="road-name top-[35%] left-[5%] text-gray-400">中正路</div>
+                    <div class="road-name top-[10%] left-[62%] text-gray-400 rotate-90">中山路</div>
                     <div id="map-points-container"></div>
                 </div>
 
-                <div id="details-box" class="bg-stone-50 rounded-2xl p-5 border border-stone-200 min-h-[300px]">
+                <div id="details-box" class="bg-stone-50 rounded-2xl p-5 border border-stone-200 min-h-[300px] relative">
                     <div id="station-detail"></div>
                 </div>
 
-                <!-- AI 對話 -->
+                <!-- AI 對話視窗 -->
                 <div id="ai-chat-window" class="hidden absolute inset-4 bg-white/98 z-50 rounded-2xl shadow-2xl border border-purple-100 flex flex-col overflow-hidden">
                     <div class="gemini-gradient p-4 text-white flex justify-between items-center">
-                        <span class="font-bold text-sm">Gemini 老台東領隊</span>
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-robot"></i>
+                            <span class="font-bold text-sm">Gemini 智慧領隊</span>
+                        </div>
                         <button onclick="toggleAIChat()"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm bg-stone-50"></div>
+                    <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm bg-stone-50">
+                        <div class="bg-purple-50 text-purple-800 p-3 rounded-xl border border-purple-100">
+                            少年家，我是你的智慧領隊。想知道哪裡好玩、好吃的，或是需要我幫你規劃接下來的路線嗎？
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <button onclick="askAI('✨ 幫我規劃半小時的美食快閃路線')" class="bg-white border border-purple-200 px-3 py-1 rounded-full text-xs hover:bg-purple-100 transition-colors">✨ 美食快閃推薦</button>
+                                <button onclick="askAI('✨ 我想看歷史古蹟，推薦下一站去哪？')" class="bg-white border border-purple-200 px-3 py-1 rounded-full text-xs hover:bg-purple-100 transition-colors">✨ 古蹟漫遊建議</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="p-3 bg-white border-t flex gap-2">
-                        <input type="text" id="ai-input" placeholder="問問老領隊..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none">
-                        <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                        <input type="text" id="ai-input" placeholder="問問老領隊..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-400">
+                        <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 transition-transform"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
                 </div>
             </div>
@@ -175,7 +187,7 @@
                 list.innerHTML += `<div id="card-${id}" class="station-card p-3 rounded-lg cursor-pointer hover:bg-white border border-transparent transition-all" onclick="selectStation(${id})">
                     <div class="flex items-center gap-3">
                         <span class="w-6 h-6 bg-stone-200 text-stone-600 rounded-full text-xs font-bold flex items-center justify-center">${id}</span>
-                        <div class="text-sm font-bold">${s.title}</div>
+                        <div class="text-sm font-bold text-stone-700">${s.title}</div>
                     </div>
                 </div>`;
                 mapPoints.innerHTML += `<div id="point-${id}" class="map-point" style="top: ${s.coords.top}; left: ${s.coords.left};" onclick="selectStation(${id})">${id}<div class="map-label">${s.title}</div></div>`;
@@ -189,38 +201,98 @@
             document.getElementById(`point-${id}`).classList.add('active', 'pulse-active');
             const s = stations[id];
             document.getElementById('station-detail').innerHTML = `
-                <div class="flex justify-between items-start mb-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start mb-4 gap-3">
                     <div>
                         <h2 class="text-2xl font-bold text-stone-800">${s.title}</h2>
                         <p class="text-orange-700 text-xs font-bold">${s.subtitle}</p>
                     </div>
-                    <button onclick="generateVoiceTour(${id})" id="voice-btn-${id}" class="bg-white border p-3 rounded-xl shadow-sm hover:bg-stone-100 flex items-center gap-2 text-xs font-bold">
-                        <i class="fa-solid fa-volume-high text-orange-600"></i> 語音導覽
-                    </button>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="generateVoiceTour(${id})" id="voice-btn-${id}" class="flex-1 sm:flex-none bg-white border p-3 rounded-xl shadow-sm hover:bg-stone-100 flex items-center justify-center gap-2 text-xs font-bold">
+                            <i class="fa-solid fa-volume-high text-orange-600"></i> 語音
+                        </button>
+                        <button onclick="deepDive('${s.title}')" class="flex-1 sm:flex-none bg-purple-50 text-purple-700 border border-purple-100 p-3 rounded-xl shadow-sm hover:bg-purple-100 flex items-center justify-center gap-2 text-xs font-bold">
+                            <i class="fa-solid fa-sparkles"></i> ✨ 深度解析
+                        </button>
+                    </div>
                 </div>
-                <p class="text-stone-600 text-sm leading-relaxed mb-4">${s.desc}</p>
+                <p class="text-stone-600 text-sm leading-relaxed mb-4 p-4 bg-white rounded-xl border border-stone-100 shadow-inner">${s.desc}</p>
+                <div id="dive-result" class="hidden animate-fade-in text-xs bg-purple-50 p-4 rounded-xl border border-purple-100 text-purple-900 italic leading-relaxed"></div>
             `;
         }
 
-        // 手機版語音核心修正：主動點擊觸發
+        // ✨ 深度解析功能：調用 Gemini LLM
+        async function deepDive(title) {
+            const container = document.getElementById('dive-result');
+            container.classList.remove('hidden');
+            container.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 智慧領隊正在翻閱歷史文獻...`;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `請針對台東的「${title}」撰寫一段約 150 字的深度歷史回憶。語氣要像是一位曾經生活在當地的老長輩，分享一個不為人知的小細節或情感連結。請用繁體中文回報。` }] }],
+                        systemInstruction: { parts: [{ text: "你是一位對台東在地文化瞭如指掌的長者，語氣溫暖親切。" }] }
+                    })
+                });
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                container.innerHTML = `<div class="font-bold mb-1">✨ 老師傅的回憶錄：</div>${text}`;
+            } catch (err) {
+                container.innerHTML = "抱歉，這段記憶暫時想不起來了...";
+            }
+        }
+
+        // ✨ 智慧領隊聊天功能
+        async function askAI(customMsg = null) {
+            const input = document.getElementById('ai-input');
+            const history = document.getElementById('chat-history');
+            const msg = customMsg || input.value.trim();
+            if (!msg) return;
+
+            if (!customMsg) input.value = "";
+            history.innerHTML += `<div class="flex justify-end"><div class="bg-purple-600 text-white p-3 rounded-xl rounded-tr-none max-w-[85%]">${msg}</div></div>`;
+            
+            const loadId = "load-" + Date.now();
+            history.innerHTML += `<div id="${loadId}" class="flex justify-start"><div class="bg-white border p-3 rounded-xl rounded-tl-none text-stone-400 italic"><i class="fa-solid fa-ellipsis animate-pulse"></i> 思考中...</div></div>`;
+            history.scrollTop = history.scrollHeight;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: msg }] }],
+                        systemInstruction: { parts: [{ text: "你是一位台東智慧導覽領隊。如果使用者詢問行程規劃，請根據目前提供的 5 個景點進行合理推薦。語氣要專業且帶有在地情感。" }] }
+                    })
+                });
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                document.getElementById(loadId).remove();
+                history.innerHTML += `<div class="flex justify-start"><div class="bg-white border border-stone-200 p-3 rounded-xl rounded-tl-none max-w-[85%] shadow-sm text-stone-700">${text}</div></div>`;
+                history.scrollTop = history.scrollHeight;
+            } catch (err) {
+                document.getElementById(loadId).innerHTML = "連線稍微有點塞車，請再試一次！";
+            }
+        }
+
         async function generateVoiceTour(id) {
             const btn = document.getElementById(`voice-btn-${id}`);
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 生成中`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
             btn.disabled = true;
 
             try {
-                // 1. 生成腳本
                 const textResp = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `請用溫馨的老導遊口吻，簡單介紹：${stations[id].title}。內容約100字。` }] }]
+                        contents: [{ parts: [{ text: `請用溫馨的老導遊口吻，簡單介紹：${stations[id].title}。內容約80字。` }] }]
                     })
                 });
                 const script = (await textResp.json()).candidates[0].content.parts[0].text;
 
-                // 2. 轉語音
                 const ttsResp = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -235,32 +307,20 @@
                 const ttsData = await ttsResp.json();
                 const audioBase64 = ttsData.candidates[0].content.parts.find(p => p.inlineData).inlineData.data;
                 
-                // 3. 關鍵修正：建立 Blob 並立刻播放
                 const audioBlob = pcmToWav(audioBase64, 24000);
                 const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio();
-                audio.src = audioUrl;
+                const audio = new Audio(audioUrl);
                 
-                btn.innerHTML = `<i class="fa-solid fa-circle-play text-green-500"></i> 播放中`;
-                
-                // 手機版必須在非同步操作後再次「明確」呼叫 play
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.error("手機播放限制:", error);
-                        btn.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 點我重播`;
-                        btn.disabled = false;
-                    });
-                }
+                btn.innerHTML = `<i class="fa-solid fa-play text-green-500"></i>`;
+                audio.play();
 
                 audio.onended = () => {
                     btn.innerHTML = originalHTML;
                     btn.disabled = false;
-                    URL.revokeObjectURL(audioUrl); // 釋放記憶體
+                    URL.revokeObjectURL(audioUrl);
                 };
             } catch (err) {
-                console.error(err);
-                btn.innerHTML = `重試一次`;
+                btn.innerHTML = `!`;
                 btn.disabled = false;
             }
         }
