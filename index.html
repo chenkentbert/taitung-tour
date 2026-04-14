@@ -30,12 +30,6 @@
             box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
         }
 
-        .street-line {
-            position: absolute;
-            background: #d1ccbc;
-            z-index: 1;
-        }
-
         .map-point {
             position: absolute;
             width: 32px;
@@ -86,16 +80,6 @@
             background: linear-gradient(135deg, #4285f4, #9b51e0, #e91e63);
         }
 
-        .road-name {
-            position: absolute;
-            color: #a8a294;
-            font-size: 10px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            z-index: 2;
-            pointer-events: none;
-        }
-
         @keyframes pulse {
             0% { transform: scale(1); opacity: 1; }
             50% { transform: scale(1.1); opacity: 0.8; }
@@ -129,10 +113,6 @@
             <!-- 地圖與內容 -->
             <div class="lg:col-span-8 p-4 bg-white relative">
                 <div class="map-canvas mb-4 relative" id="map-area">
-                    <div class="street-line w-full h-6 top-[40%]"></div>
-                    <div class="street-line w-6 h-full left-[60%]"></div>
-                    <div class="road-name top-[35%] left-[5%] text-gray-400">中正路</div>
-                    <div class="road-name top-[10%] left-[62%] text-gray-400 rotate-90">中山路</div>
                     <div id="map-points-container"></div>
                 </div>
 
@@ -149,34 +129,28 @@
                         </div>
                         <button onclick="toggleAIChat()"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm bg-stone-50">
-                        <div class="bg-purple-50 text-purple-800 p-3 rounded-xl border border-purple-100">
-                            少年家，我是你的智慧領隊。想知道哪裡好玩、好吃的，或是需要我幫你規劃接下來的路線嗎？
-                            <div class="flex flex-wrap gap-2 mt-3">
-                                <button onclick="askAI('✨ 幫我規劃半小時的美食快閃路線')" class="bg-white border border-purple-200 px-3 py-1 rounded-full text-xs hover:bg-purple-100 transition-colors">✨ 美食快閃推薦</button>
-                                <button onclick="askAI('✨ 我想看歷史古蹟，推薦下一站去哪？')" class="bg-white border border-purple-200 px-3 py-1 rounded-full text-xs hover:bg-purple-100 transition-colors">✨ 古蹟漫遊建議</button>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm bg-stone-50"></div>
                     <div class="p-3 bg-white border-t flex gap-2">
-                        <input type="text" id="ai-input" placeholder="問問老領隊..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-400">
-                        <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-full flex items-center justify-center hover:scale-105 transition-transform"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                        <input type="text" id="ai-input" placeholder="問問老領隊..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none">
+                        <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-full flex items-center justify-center"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-6 py-3 rounded-full text-xs shadow-2xl opacity-0 transition-opacity pointer-events-none z-[100]">連結已複製！</div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-6 py-3 rounded-full text-xs shadow-2xl opacity-0 transition-opacity pointer-events-none z-[100]"></div>
 
     <script>
+        // 注意：在 GitHub Pages 部署時，必須確保 apiKey 有正確值，或是從環境變數獲取。
         const apiKey = ""; 
+
         const stations = {
-            1: { title: "中央市場", subtitle: "台東人的靈魂胃袋", desc: "1963年啟用，這裡不只是陳樹菊女士菜攤所在地，更是台東人生活物資的集散地。", icon: "fa-basket-shopping", coords: { top: "65%", left: "22%" } },
-            2: { title: "寶町藝文中心", subtitle: "日治官舍的靜謐重生", desc: "原為台東街役場宿舍群，建於1936年。保留了完整的日式木構造建築。", icon: "fa-house-chimney", coords: { top: "25%", left: "28%" } },
-            3: { title: "中華會館", subtitle: "台東華僑的抗日堡壘", desc: "1927年落成，見證了旅台華僑集會與守護家園的熱血故事。", icon: "fa-landmark", coords: { top: "15%", left: "55%" } },
-            4: { title: "大同戲院遺蹤", subtitle: "台東的西門町與心臟", desc: "民國47年開幕，曾是大同路的繁華中心。那份在大同路「做夢」的記憶永遠不滅。", icon: "fa-film", coords: { top: "62%", left: "62%" } },
-            5: { title: "觀光夜市", subtitle: "晝夜切換的活歷史", desc: "白天是水果街，晚上化身為熱鬧夜市。展現了老街道轉型的生命力。", icon: "fa-utensils", coords: { top: "78%", left: "48%" } }
+            1: { title: "中央市場", subtitle: "台東人的靈魂胃袋", desc: "1963年啟用，這裡不只是陳樹菊女士菜攤所在地，更是台東人生活物資的集散地。", coords: { top: "65%", left: "22%" } },
+            2: { title: "寶町藝文中心", subtitle: "日治官舍的靜謐重生", desc: "原為台東街役場宿舍群，建於1936年。保留了完整的日式木構造建築。", coords: { top: "25%", left: "28%" } },
+            3: { title: "中華會館", subtitle: "台東華僑的抗日堡壘", desc: "1927年落成，見證了旅台華僑集會與守護家園的熱血故事。", coords: { top: "15%", left: "55%" } },
+            4: { title: "大同戲院遺蹤", subtitle: "台東的西門町與心臟", desc: "民國47年開幕，曾是大同路的繁華中心。那份在大同路「做夢」的記憶永遠不滅。", coords: { top: "62%", left: "62%" } },
+            5: { title: "觀光夜市", subtitle: "晝夜切換的活歷史", desc: "白天是水果街，晚上化身為熱鬧夜市。展現了老街道轉型的生命力。", coords: { top: "78%", left: "48%" } }
         };
 
         function initApp() {
@@ -206,93 +180,39 @@
                         <h2 class="text-2xl font-bold text-stone-800">${s.title}</h2>
                         <p class="text-orange-700 text-xs font-bold">${s.subtitle}</p>
                     </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="generateVoiceTour(${id})" id="voice-btn-${id}" class="flex-1 sm:flex-none bg-white border p-3 rounded-xl shadow-sm hover:bg-stone-100 flex items-center justify-center gap-2 text-xs font-bold">
-                            <i class="fa-solid fa-volume-high text-orange-600"></i> 語音
-                        </button>
-                        <button onclick="deepDive('${s.title}')" class="flex-1 sm:flex-none bg-purple-50 text-purple-700 border border-purple-100 p-3 rounded-xl shadow-sm hover:bg-purple-100 flex items-center justify-center gap-2 text-xs font-bold">
-                            <i class="fa-solid fa-sparkles"></i> ✨ 深度解析
+                    <div class="flex gap-2">
+                        <button onclick="generateVoiceTour(${id})" id="voice-btn-${id}" class="bg-white border p-3 rounded-xl shadow-sm hover:bg-stone-100 flex items-center gap-2 text-xs font-bold">
+                            <i class="fa-solid fa-volume-high text-orange-600"></i> 語音導覽
                         </button>
                     </div>
                 </div>
                 <p class="text-stone-600 text-sm leading-relaxed mb-4 p-4 bg-white rounded-xl border border-stone-100 shadow-inner">${s.desc}</p>
-                <div id="dive-result" class="hidden animate-fade-in text-xs bg-purple-50 p-4 rounded-xl border border-purple-100 text-purple-900 italic leading-relaxed"></div>
             `;
         }
 
-        // ✨ 深度解析功能：調用 Gemini LLM
-        async function deepDive(title) {
-            const container = document.getElementById('dive-result');
-            container.classList.remove('hidden');
-            container.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 智慧領隊正在翻閱歷史文獻...`;
-
-            try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `請針對台東的「${title}」撰寫一段約 150 字的深度歷史回憶。語氣要像是一位曾經生活在當地的老長輩，分享一個不為人知的小細節或情感連結。請用繁體中文回報。` }] }],
-                        systemInstruction: { parts: [{ text: "你是一位對台東在地文化瞭如指掌的長者，語氣溫暖親切。" }] }
-                    })
-                });
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                container.innerHTML = `<div class="font-bold mb-1">✨ 老師傅的回憶錄：</div>${text}`;
-            } catch (err) {
-                container.innerHTML = "抱歉，這段記憶暫時想不起來了...";
-            }
-        }
-
-        // ✨ 智慧領隊聊天功能
-        async function askAI(customMsg = null) {
-            const input = document.getElementById('ai-input');
-            const history = document.getElementById('chat-history');
-            const msg = customMsg || input.value.trim();
-            if (!msg) return;
-
-            if (!customMsg) input.value = "";
-            history.innerHTML += `<div class="flex justify-end"><div class="bg-purple-600 text-white p-3 rounded-xl rounded-tr-none max-w-[85%]">${msg}</div></div>`;
-            
-            const loadId = "load-" + Date.now();
-            history.innerHTML += `<div id="${loadId}" class="flex justify-start"><div class="bg-white border p-3 rounded-xl rounded-tl-none text-stone-400 italic"><i class="fa-solid fa-ellipsis animate-pulse"></i> 思考中...</div></div>`;
-            history.scrollTop = history.scrollHeight;
-
-            try {
-                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: msg }] }],
-                        systemInstruction: { parts: [{ text: "你是一位台東智慧導覽領隊。如果使用者詢問行程規劃，請根據目前提供的 5 個景點進行合理推薦。語氣要專業且帶有在地情感。" }] }
-                    })
-                });
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                document.getElementById(loadId).remove();
-                history.innerHTML += `<div class="flex justify-start"><div class="bg-white border border-stone-200 p-3 rounded-xl rounded-tl-none max-w-[85%] shadow-sm text-stone-700">${text}</div></div>`;
-                history.scrollTop = history.scrollHeight;
-            } catch (err) {
-                document.getElementById(loadId).innerHTML = "連線稍微有點塞車，請再試一次！";
-            }
-        }
-
         async function generateVoiceTour(id) {
+            if (!apiKey) {
+                showToast("錯誤：尚未配置 API Key，無法產生語音。");
+                return;
+            }
+
             const btn = document.getElementById(`voice-btn-${id}`);
             const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 正在生成`;
             btn.disabled = true;
 
             try {
+                // 1. 生成介紹文字
                 const textResp = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: `請用溫馨的老導遊口吻，簡單介紹：${stations[id].title}。內容約80字。` }] }]
+                        contents: [{ parts: [{ text: `請用台東老導遊口吻介紹：${stations[id].title}。約60字。` }] }]
                     })
                 });
                 const script = (await textResp.json()).candidates[0].content.parts[0].text;
 
+                // 2. 文字轉語音 (TTS)
                 const ttsResp = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -307,11 +227,12 @@
                 const ttsData = await ttsResp.json();
                 const audioBase64 = ttsData.candidates[0].content.parts.find(p => p.inlineData).inlineData.data;
                 
+                // 3. 轉換並播放
                 const audioBlob = pcmToWav(audioBase64, 24000);
                 const audioUrl = URL.createObjectURL(audioBlob);
                 const audio = new Audio(audioUrl);
                 
-                btn.innerHTML = `<i class="fa-solid fa-play text-green-500"></i>`;
+                btn.innerHTML = `<i class="fa-solid fa-play text-green-500"></i> 播放中...`;
                 audio.play();
 
                 audio.onended = () => {
@@ -320,18 +241,20 @@
                     URL.revokeObjectURL(audioUrl);
                 };
             } catch (err) {
-                btn.innerHTML = `!`;
+                console.error(err);
+                showToast("語音生成失敗，請檢查網路或金鑰。");
+                btn.innerHTML = originalHTML;
                 btn.disabled = false;
             }
         }
 
-        async function fetchWithRetry(url, options, maxRetries = 5) {
+        async function fetchWithRetry(url, options, maxRetries = 3) {
             let delay = 1000;
             const finalUrl = `${url}${url.includes('?') ? '&' : '?'}key=${apiKey}`;
             for (let i = 0; i < maxRetries; i++) {
                 try {
                     const response = await fetch(finalUrl, options);
-                    if (!response.ok) throw new Error("Retry");
+                    if (!response.ok) throw new Error("API Request Failed");
                     return response;
                 } catch (err) {
                     if (i === maxRetries - 1) throw err;
@@ -365,17 +288,22 @@
             return new Blob([view], { type: 'audio/wav' });
         }
 
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
+        }
+
         function toggleAIChat() { document.getElementById('ai-chat-window').classList.toggle('hidden'); }
         function shareTour() {
-            const temp = document.createElement("input");
-            document.body.appendChild(temp);
-            temp.value = window.location.href;
-            temp.select();
-            document.execCommand("copy");
-            document.body.removeChild(temp);
-            const t = document.getElementById('toast');
-            t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 2000);
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = window.location.href;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            showToast("連結已複製到剪貼簿！");
         }
 
         window.onload = initApp;
