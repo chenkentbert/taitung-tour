@@ -1,61 +1,238 @@
-function pcmToWav(base64, sampleRate) {
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-    
-    const buffer = new ArrayBuffer(44 + bytes.length);
-    const view = new DataView(buffer);
-    
-    const writeString = (offset, string) => {
-        for (let i = 0; i < string.length; i++) {
-            view.setUint8(offset + i, string.charCodeAt(i));
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【時光脈動・老台東】智慧導覽 v4.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8f5f0; color: #4a443f; }
+        
+        /* 仿古街道圖背景 */
+        .map-bg {
+            background-color: #eaddca;
+            background-image: 
+                linear-gradient(90deg, #d4c4ae 1px, transparent 1px),
+                linear-gradient(#d4c4ae 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 2rem;
         }
-    };
 
-    writeString(0, 'RIFF');
-    view.setUint32(4, 32 + bytes.length, true);
-    writeString(8, 'WAVE');
-    writeString(12, 'fmt ');
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true); // PCM format
-    view.setUint16(22, 1, true); // Mono
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * 2, true); // Byte rate
-    view.setUint16(32, 2, true); // Block align
-    view.setUint16(34, 16, true); // Bits per sample
-    writeString(36, 'data');
-    view.setUint32(40, bytes.length, true);
+        .street { position: absolute; background: #fffdfa; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        .street-v { width: 30px; height: 100%; }
+        .street-h { height: 30px; width: 100%; }
 
-    const wavBytes = new Uint8Array(buffer);
-    wavBytes.set(bytes, 44);
+        .station-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .station-marker:hover { transform: translate(-50%, -60%) scale(1.2); }
 
-    return new Blob([wavBytes], { type: 'audio/wav' });
-}
+        .gemini-gradient { background: linear-gradient(135deg, #4285f4, #9b51e0, #e91e63); }
+        
+        @keyframes ripple {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+        .ripple {
+            position: absolute;
+            border: 2px solid #ea580c;
+            border-radius: 50%;
+            animation: ripple 2s infinite;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl md:text-6xl font-black text-[#5d534a] mb-2 tracking-tighter">時光脈動・老台東</h1>
+            <p class="text-stone-500 font-medium tracking-[0.2em] text-sm uppercase">智慧導覽系統 · 行動優化版</p>
+            
+            <div class="mt-6 flex flex-wrap justify-center gap-3">
+                <button onclick="unlockAudio()" id="audio-unlock-btn" class="bg-orange-100 text-orange-700 px-6 py-2 rounded-full text-sm font-bold border border-orange-200 shadow-sm">
+                    <i class="fa-solid fa-unlock-keyhole mr-2"></i> 啟動語音導覽
+                </button>
+                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 智慧領隊
+                </button>
+                <button onclick="promptGeminiKey()" class="bg-white text-stone-600 px-6 py-2 rounded-full text-sm font-bold border border-stone-200 shadow-sm">
+                    配置 API Key
+                </button>
+            </div>
+        </header>
 
-        function toggleAIChat() { document.getElementById('ai-chat-window').classList.toggle('hidden'); }
-        function shareTour() { showToast("導覽連結已複製！"); }
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- 景點地圖區 -->
+            <div class="lg:col-span-7">
+                <div class="map-bg h-[400px] md:h-[600px] border-4 border-white shadow-xl">
+                    <!-- 虛擬街道 -->
+                    <div class="street street-v left-[20%]"></div>
+                    <div class="street street-v left-[50%]"></div>
+                    <div class="street street-v left-[80%]"></div>
+                    <div class="street street-h top-[30%]"></div>
+                    <div class="street street-h top-[70%]"></div>
+
+                    <!-- 景點標記 -->
+                    <div id="markers-container"></div>
+                </div>
+            </div>
+
+            <!-- 景點詳細資訊 -->
+            <div class="lg:col-span-5">
+                <div id="detail-card" class="bg-white rounded-[2.5rem] p-8 shadow-xl border border-stone-100 h-full flex flex-col justify-center min-h-[300px]">
+                    <div id="detail-content" class="text-center">
+                        <i class="fa-solid fa-map-marked-alt text-5xl text-stone-200 mb-6 block"></i>
+                        <h3 class="text-xl font-bold text-stone-400">請點擊地圖景點</h3>
+                        <p class="text-stone-400 mt-2">開啟台東老街的故事之旅</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 對話視窗 -->
+    <div id="ai-chat" class="hidden fixed bottom-6 right-6 w-[90vw] md:w-80 h-[450px] bg-white shadow-2xl rounded-3xl z-50 flex flex-col border border-stone-200 overflow-hidden">
+        <div class="gemini-gradient p-4 text-white font-bold flex justify-between items-center">
+            <span class="flex items-center"><i class="fa-solid fa-robot mr-2"></i> 智慧領隊</span>
+            <button onclick="toggleAIChat()">✕</button>
+        </div>
+        <div id="chat-box" class="flex-1 p-4 overflow-y-auto text-sm space-y-4 bg-stone-50"></div>
+        <div class="p-4 border-t bg-white">
+            <div class="flex gap-2">
+                <input type="text" id="chat-input" class="flex-1 border border-stone-200 p-3 rounded-xl text-sm outline-none" placeholder="問問台東的往事...">
+                <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const stations = [
+            { id: 1, x: 25, y: 35, title: "中央市場", desc: "這裡是台東的心臟，陳樹菊女士的善行就在此生根。清晨的叫賣聲，是台東最道地的生命樂章。" },
+            { id: 2, x: 75, y: 25, title: "寶町藝文中心", desc: "建於1936年的日治宿舍，檜木建築訴說著優雅的時光。現在是藝文匯聚、老靈魂安放的空間。" },
+            { id: 3, x: 45, y: 55, title: "中華會館", lat: 22.7562, lng: 121.1528, desc: "中西合璧的古蹟建築，見證了台東各族群在這片土地上共同奮鬥與和平共處的珍貴歷史。" },
+            { id: 4, x: 15, y: 75, title: "大同戲院遺址", desc: "曾經是台東最繁華的電影院。雖然現已成為遺址，但那份看電影散場後的熱鬧，依然留在老台東人的心裡。" },
+            { id: 5, x: 65, y: 80, title: "正氣路觀光夜市", desc: "白天賣水果，晚上變夜市。這裡有台東人的日常，也有各種充滿驚喜的在地小吃。" }
+        ];
+
+        let geminiKey = sessionStorage.getItem('gemini_key') || "";
+        let audioUnlocked = false;
+
+        // 初始化地圖標記
+        function initMarkers() {
+            const container = document.getElementById('markers-container');
+            stations.forEach(s => {
+                const el = document.createElement('div');
+                el.className = 'station-marker';
+                el.style.left = s.x + '%';
+                el.style.top = s.y + '%';
+                el.innerHTML = `
+                    <div class="relative">
+                        <div class="ripple"></div>
+                        <div class="w-10 h-10 bg-orange-600 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-black text-sm relative z-20">
+                            ${s.id}
+                        </div>
+                        <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-white/90 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm whitespace-nowrap">
+                            ${s.title}
+                        </div>
+                    </div>
+                `;
+                el.onclick = () => selectStation(s);
+                container.appendChild(el);
+            });
+        }
+
+        // 解鎖音訊 (iPhone 必須)
+        function unlockAudio() {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance('語音功能已啟動');
+            u.lang = 'zh-TW';
+            u.volume = 0; // 靜音測試
+            window.speechSynthesis.speak(u);
+            
+            audioUnlocked = true;
+            document.getElementById('audio-unlock-btn').innerHTML = `<i class="fa-solid fa-check mr-2"></i> 語音已就緒`;
+            document.getElementById('audio-unlock-btn').classList.replace('bg-orange-100', 'bg-green-100');
+            document.getElementById('audio-unlock-btn').classList.replace('text-orange-700', 'text-green-700');
+            alert("導覽語音已啟用！現在點擊景點即可聆聽介紹。");
+        }
+
+        function selectStation(s) {
+            const content = document.getElementById('detail-content');
+            content.className = "animate-fadeIn text-left";
+            content.innerHTML = `
+                <div class="inline-block bg-orange-100 text-orange-700 text-[10px] font-black px-2 py-0.5 rounded mb-4 uppercase tracking-tighter">Spot Reference ${s.id}</div>
+                <h2 class="text-3xl font-black text-stone-800 mb-4">${s.title}</h2>
+                <p class="text-stone-600 leading-relaxed mb-8">${s.desc}</p>
+                <button onclick="playTour('${s.title}。${s.desc}')" class="w-full bg-stone-800 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-orange-600 transition-all active:scale-95 shadow-lg">
+                    <i class="fa-solid fa-circle-play text-xl"></i> 聆聽導覽
+                </button>
+            `;
+            
+            // 如果已經解鎖，點擊景點就自動唸出標題
+            if(audioUnlocked) playTour(`${s.title}`);
+        }
+
+        function playTour(text) {
+            if(!audioUnlocked) {
+                alert("請先點擊上方的『啟動語音導覽』按鈕。");
+                return;
+            }
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-TW';
+            utterance.rate = 0.85; // 稍微慢一點更有韻味
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleAIChat() {
+            document.getElementById('ai-chat').classList.toggle('hidden');
+        }
+
+        function promptGeminiKey() {
+            const key = prompt("請輸入您的 Gemini API Key:", geminiKey);
+            if(key) {
+                geminiKey = key;
+                sessionStorage.setItem('gemini_key', key);
+            }
+        }
 
         async function askAI() {
-            if (!currentApiKey) { handleAction('ai'); return; }
-            const input = document.getElementById('ai-input');
-            const history = document.getElementById('chat-history');
+            if(!geminiKey) { alert("請先配置 API Key"); return; }
+            const input = document.getElementById('chat-input');
+            const chatBox = document.getElementById('chat-box');
             const msg = input.value.trim();
-            if (!msg) return;
+            if(!msg) return;
+
+            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%]">${msg}</div></div>`;
             input.value = "";
-            history.innerHTML += `<div class="flex justify-end mb-4"><div class="bg-purple-600 text-white px-5 py-3 rounded-2xl rounded-tr-none max-w-[85%] shadow-md">${msg}</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
             try {
-                const resp = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: msg }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `你是一位台東在地老鄰居，請親切回答：${msg}` }] }] })
                 });
-                const data = await resp.json();
-                history.innerHTML += `<div class="flex justify-start mb-4"><div class="bg-white border px-5 py-3 rounded-2xl rounded-tl-none max-w-[85%] shadow-sm">${data.candidates[0].content.parts[0].text}</div></div>`;
-            } catch (e) { history.innerHTML += `<div class="text-red-500 text-center text-[10px]">請求失敗</div>`; }
-            history.scrollTop = history.scrollHeight;
+                const data = await res.json();
+                const reply = data.candidates[0].content.parts[0].text;
+                chatBox.innerHTML += `<div class="flex justify-start"><div class="bg-white p-3 rounded-2xl rounded-tl-none border border-stone-200 shadow-sm max-w-[85%]">${reply}</div></div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) {
+                chatBox.innerHTML += `<div class="text-center text-red-500 text-xs py-2">服務暫時不可用，請檢查金鑰。</div>`;
+            }
         }
 
-        window.onload = initApp;
+        window.onload = initMarkers;
     </script>
 </body>
 </html>
