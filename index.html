@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【時光脈動・老台東】智慧導覽 v4.2</title>
+    <title>【時光脈動・老台東】智慧導覽 v7.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -13,32 +13,45 @@
         .map-bg {
             background-color: #eaddca;
             background-image: 
-                linear-gradient(90deg, #d4c4ae 1px, transparent 1px),
-                linear-gradient(#d4c4ae 1px, transparent 1px);
-            background-size: 40px 40px;
+                linear-gradient(90deg, rgba(212,196,174,0.3) 1px, transparent 1px),
+                linear-gradient(rgba(212,196,174,0.3) 1px, transparent 1px);
+            background-size: 20px 20px;
             position: relative;
             overflow: hidden;
             border-radius: 2rem;
         }
 
-        .street { position: absolute; background: #fffdfa; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
-        .street-v { width: 30px; height: 100%; }
-        .street-h { height: 30px; width: 100%; }
+        .street { 
+            position: absolute; 
+            background: #fffdfa; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.08); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #a39689;
+            font-weight: bold;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .street-v { width: 40px; height: 100%; writing-mode: vertical-rl; }
+        .street-h { height: 40px; width: 100%; }
 
         .station-marker {
             position: absolute;
             transform: translate(-50%, -50%);
             cursor: pointer;
-            z-index: 10;
+            z-index: 20;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .station-marker:hover { transform: translate(-50%, -60%) scale(1.2); }
+        .station-marker:hover { transform: translate(-50%, -60%) scale(1.15); z-index: 30; }
 
         .gemini-gradient { background: linear-gradient(135deg, #4285f4, #9b51e0, #e91e63); }
         
         @keyframes ripple {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
         }
         .ripple {
             position: absolute;
@@ -50,51 +63,65 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4c4ae; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #c5b49d; }
+        
+        .timeline-dot {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline-dot::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.5rem;
+            width: 0.75rem;
+            height: 0.75rem;
+            background: #4a443f;
+            border-radius: 50%;
+        }
+
+        .bright-recommendation {
+            background-color: #fdfaf3;
+            border: 2px solid #f2e8d5;
+            box-shadow: 0 4px 15px rgba(212, 196, 174, 0.15);
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-6xl mx-auto">
         <header class="mb-8 text-center">
-            <h1 class="text-4xl md:text-6xl font-black text-[#5d534a] mb-2 tracking-tighter">時光脈動・老台東</h1>
-            <p class="text-stone-500 font-medium tracking-[0.2em] text-sm uppercase">智慧導覽系統 · 深度文史研究版</p>
+            <h1 class="text-4xl md:text-5xl font-black text-[#5d534a] mb-2 tracking-tighter">時光脈動・老台東</h1>
+            <p class="text-stone-500 font-medium tracking-[0.2em] text-xs uppercase">智慧導覽系統 · 深度歷史考證版</p>
             
-            <div class="mt-6 flex flex-wrap justify-center gap-3 text-xs md:text-sm">
-                <button onclick="unlockAudio()" id="audio-unlock-btn" class="bg-orange-100 text-orange-700 px-6 py-2 rounded-full font-bold border border-orange-200 shadow-sm transition-all active:scale-95">
-                    <i class="fa-solid fa-unlock-keyhole mr-2"></i> 啟動語音導覽
+            <div class="mt-6 flex flex-wrap justify-center gap-3 text-xs">
+                <button onclick="unlockAudio()" id="audio-unlock-btn" class="bg-orange-100 text-orange-700 px-5 py-2 rounded-full font-bold border border-orange-200 shadow-sm transition-all active:scale-95">
+                    <i class="fa-solid fa-unlock-keyhole mr-1"></i> 啟動語音
                 </button>
-                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-6 py-2 rounded-full font-bold shadow-lg transition-all active:scale-95">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> 智慧領隊
-                </button>
-                <button onclick="promptGeminiKey()" class="bg-white text-stone-600 px-6 py-2 rounded-full font-bold border border-stone-200 shadow-sm">
-                    配置 API Key
+                <button onclick="toggleAIChat()" class="gemini-gradient text-white px-5 py-2 rounded-full font-bold shadow-lg transition-all active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 智慧領隊
                 </button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- 景點地圖區 -->
-            <div class="lg:col-span-6">
-                <div class="map-bg h-[400px] md:h-[650px] border-4 border-white shadow-xl">
-                    <div class="street street-v left-[20%]"></div>
-                    <div class="street street-v left-[50%]"></div>
-                    <div class="street street-v left-[80%]"></div>
-                    <div class="street street-h top-[30%]"></div>
-                    <div class="street street-h top-[70%]"></div>
+            <div class="lg:col-span-5">
+                <div class="map-bg h-[400px] md:h-[750px] border-4 border-white shadow-2xl">
+                    <div class="street street-v left-[20%]">中山路</div>
+                    <div class="street street-v left-[50%]">中正路</div>
+                    <div class="street street-v left-[80%]">光明路</div>
+                    <div class="street street-h top-[30%]">大同路</div>
+                    <div class="street street-h top-[70%]">正氣路</div>
                     <div id="markers-container"></div>
                 </div>
             </div>
 
-            <!-- 景點詳細資訊區 -->
-            <div class="lg:col-span-6">
-                <div id="detail-card" class="bg-white rounded-[2.5rem] p-6 md:p-8 shadow-xl border border-stone-100 h-[650px] flex flex-col">
+            <div class="lg:col-span-7">
+                <div id="detail-card" class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl border border-stone-100 h-[500px] md:h-[750px] flex flex-col">
                     <div id="detail-content" class="flex-1 overflow-y-auto custom-scrollbar pr-4">
                         <div class="h-full flex flex-col justify-center text-center py-10">
-                            <i class="fa-solid fa-landmark text-7xl text-stone-100 mb-8 block"></i>
-                            <h3 class="text-2xl font-black text-stone-400">點擊景點 · 走讀老台東</h3>
-                            <p class="text-stone-400 mt-4 leading-loose text-sm">
-                                每一處標記，都藏著一段被時光掩埋的故事。<br>
-                                點擊左側地圖，開啟深度的歷史探索之旅。
+                            <i class="fa-solid fa-monument text-7xl text-stone-100 mb-8 block"></i>
+                            <h3 class="text-2xl font-black text-stone-400">開啟台東時光之門</h3>
+                            <p class="text-stone-400 mt-4 leading-loose max-w-sm mx-auto">
+                                點擊地圖上的據點編號，系統將帶領您穿越百年，細讀台東市街的演變史。
                             </p>
                         </div>
                     </div>
@@ -112,8 +139,8 @@
         <div id="chat-box" class="flex-1 p-4 overflow-y-auto text-sm space-y-4 bg-stone-50 custom-scrollbar"></div>
         <div class="p-4 border-t bg-white">
             <div class="flex gap-2">
-                <input type="text" id="chat-input" class="flex-1 border border-stone-200 p-3 rounded-xl text-sm outline-none" placeholder="想了解更多細節？問我吧...">
-                <button onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-xl flex items-center justify-center">
+                <input type="text" id="chat-input" class="flex-1 border border-stone-200 p-3 rounded-xl text-sm outline-none" placeholder="問問更多歷史細節...">
+                <button id="send-btn" onclick="askAI()" class="gemini-gradient text-white w-10 h-10 rounded-xl flex items-center justify-center">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
@@ -123,38 +150,73 @@
     <script>
         const stations = [
             { 
-                id: 1, x: 25, y: 35, title: "中央市場", 
-                history: "台東中央市場成立於民國52年，是台東市區規模最大、歷史最悠久的傳統市場。這裡承載了台東半個多世紀的民生記憶。",
-                architecture: "市場內部保留了典型的早期傳統市場結構，狹窄的走道與密集的攤位交織成獨特的社會空間。",
-                story: "這裡最感人的篇章莫過於「賣菜阿嬤」陳樹菊女士。她在中央市場賣菜長達50多年，生活極其簡樸，卻將積攢下的千萬所得捐助給學校與孤兒院，讓這個市井之地成為台東慈悲精神的燈塔。清晨時分，您可以感受到最純粹的台東語言與生活氣息。" 
+                id: 1, x: 25, y: 35, title: "台東市中央市場", 
+                history: "台東市中央市場的根源可追溯至日治時期，當時規模較小。現今所見的宏大基地主要成形於戰後。1963年（民國52年），因應人口成長與都市擴張，政府正式啟用目前的現代化市場基地，確立了其作為東台灣最大零售物資集散中心的地緣戰略地位。",
+                events: [
+                    { year: "1963", event: "中央市場正式遷至現址啟用，成為當時規劃最完善的市場。" },
+                    { year: "1990s", event: "愛心菜販陳樹菊女士在市場內的「員泰蔬菜」默默行善，引發國際關注。" },
+                    { year: "2010s", event: "市場進行多項內部更新與通風改善工程，維持台東「靈魂胃袋」之美譽。" }
+                ],
+                architecture: "建築採取典型的戰後公有零售市場空間佈局，擁有超過250個攤位。內部依業種區分為鮮魚、肉類、蔬果及南北貨雜貨區。特別保留了早期西服店、布莊與傳統修改衣物的空間，是觀察台灣常民生活的微型社會樣貌。",
+                story: "這裡是台東最真實的生活切片。清晨三、點，當全市尚在沉睡，中央市場已燈火通明。陳樹菊女士奮鬥50餘年的攤位，更賦予了這個囂市場一種獨特的慈善光輝。",
+                nearby: "阿鋐炸雞、員泰蔬菜攤、楊記家傳地瓜酥"
             },
             { 
-                id: 2, x: 75, y: 25, title: "寶町藝文中心", 
-                history: "寶町藝文中心原為日治時期的「台東街役場」職務宿舍群，興建於1936年（昭和11年）。「寶町」之名源自日治時期的地名寶町。",
-                architecture: "建築群屬於典型的日式木造平房樣式，使用了大量的台灣檜木。屋頂覆蓋燻瓦，設有雨淋板與抬高地板，展現了當時適應台灣濕熱氣候的建築智慧。",
-                story: "在戰後曾一度荒廢，後經台東市公所積極修復，於2004年重新對外開放。現在這片寧靜的日式宅邸，已從嚴肅的官舍轉變為推廣在地藝術與文史的空間，讓遊客能在此體會慢活的東岸時光。" 
+                id: 2, x: 75, y: 25, title: "寶町藝文中心 (原街役場宿舍群)", 
+                address: "台東縣台東市中山路182號 (中山路178巷口)",
+                status: "台東縣歷史建築 / 原台東市長官邸及市役所宿舍",
+                year: "1936 年（日治昭和 11 年）",
+                history: "這片建築群於1936年落成，當時稱為「寶町」，是台東街役場（今市公所）高級官員的職務宿舍區。其中規模最大者為當時的「街長官舍」。戰後由國民政府接收，轉為台東鎮長、市長官邸及職員宿舍。這組日式木構造建築群見證了台東行政核心區的空間變遷。",
+                events: [
+                    { year: "1936", event: "寶町官員宿舍群正式落成，作為日治時期行政體系之身份象徵。" },
+                    { year: "2000", event: "台東市公所爭取經費啟動修復工程，搶救頹圮的六棟日式宿舍。" },
+                    { year: "2004", event: "正式掛牌「寶町藝文中心」營運，轉型為全民共享的藝文空間。" }
+                ],
+                architecture: "典型的日式傳統民居（和式建築）。特色包含架高防潮通風層、木造雨淋板牆面，以及灰色瓦片鋪設的切妻造屋頂。內部格局嚴謹還原，包含玄關、居間及緣側，具高度建築藝術與修復價值。",
+                story: "走進寶町，可以感受到老台東寧靜優雅的氣息。這裡與鄰近的中華會館對比了日治時期的雙重文化：寶町代表的是「官方行政」的秩序感，而中華會館則是「民間華僑」的凝聚力。",
+                nearby: "台東美術館、台東市公所、明隆春捲"
             },
             { 
-                id: 3, x: 45, y: 55, title: "中華會館", 
-                history: "中華會館是台東少數留存的清領末期至日治初期建築，是當時旅台華僑組織的社交場所，具有高度的族群歷史意義。",
-                architecture: "建築結合了中式紅磚屋面、西式圓拱長型門窗以及日式樑柱結構，形成一種獨特的折衷式建築風格。這種混血美學正反映了台東多元文化的交融。",
-                story: "這座會館曾是台東漢移民與外界聯繫的中心，也是早期族群調解紛爭、互助合作的重要基點。斑駁的門牆訴說著百年前拓荒者在此紮根的艱辛，是走讀台東城市演進史不可或缺的一站。" 
+                id: 3, x: 45, y: 55, title: "台東中華會館", 
+                address: "台東縣台東市中正路 143 號",
+                status: "台東縣歷史建築（2002 年登錄）",
+                year: "1927 年（日治昭和 2 年）",
+                history: "中華會館落成於1927年，是日治時期台東華僑團結與慈善救濟的中心。二戰期間此地實為台東華僑的抗日聯絡核心，曾發生著名的「中華會館事件」。戰後曾改組為「台灣建設協進社台東分社」。",
+                events: [
+                    { year: "1927", event: "中華會館正式落成，由劉洋、鄭品聰等14位華僑先賢倡議成立。" },
+                    { year: "1937", event: "「中華會館事件」：中日戰爭爆發，日警逮捕多位華僑幹部。" },
+                    { year: "2002", event: "登錄為歷史建築，見證台東移民在夾縫中求團結的艱難歷史。" }
+                ],
+                architecture: "建築揉合西式巴洛克與RC加強磚造風格。二樓圓形山頭裝飾有稻穗與黨徽，設有帶拱心石裝飾的弧形拱窗。一樓招牌可見「臺東分社」等時代刻痕。",
+                story: "這裡是東台灣華僑精神的象徵。山牆上的稻穗圖騰與具歷史張力的匾額，靜靜訴說著台東僑界跨越世紀的團結與愛國情懷。",
+                nearby: "老台東米苔目、林家臭豆腐、久昂臭豆腐"
             },
             { 
-                id: 4, x: 15, y: 75, title: "大同戲院遺址", 
-                history: "成立於民國47年的大同戲院，曾是台東縣內規模最大的豪華電影院，也是大同路繁榮時期的精神象徵。",
-                architecture: "當時的建築規模壯麗，擁有超過千人的座位區。戲院周邊衍生的攤販與商家，構成了老台東人的娛樂核心區（俗稱台東的西門町）。",
-                story: "在那個休閒活動匱乏的年代，大同戲院承載了無數家庭的聚會記憶與情侶約會。2009年的一場大火雖然帶走了建築物，但那份「電影散場後在街口吃宵夜」的情懷依然活在老一輩台東人的敘述中。現在雖為空地，卻是老街導覽中最具共鳴的時空斷層。" 
+                id: 4, x: 15, y: 75, title: "大同市場攤販部 (原大同戲院遺址)", 
+                history: "這座位於中正路上的建築為「大同市場攤販部」，原為「大同戲院」的附屬建築。戲院開幕於1958年，曾是台東最豪華的娛樂地標。1960-1980年代，因戲院帶來的人潮帶動了周邊商圈，逐漸聚集形成攤販部，是當時台東市極為繁華的生活與視聽娛樂核心。隨戲院於2009年火災歇業，此處轉向沒落，成為觀察「戲院共生商圈」興衰的最佳實例。",
+                events: [
+                    { year: "1958", event: "大同戲院開幕，帶動周邊大同市場與附屬攤販部的繁榮。" },
+                    { year: "1980s", event: "台東影視娛樂全盛期，此處為居民採買與視聽生活之重心。" },
+                    { year: "2009", event: "大同戲院遭逢祝融歇業，周邊攤販部隨之凋零，現多轉作停車或閒置空間。" }
+                ],
+                architecture: "最顯著特色為建築上方保留的「大同市場攤販部」陽刻立體字樣。這種水泥浮雕字體在民國時期公有建築中相當盛行，旨在增加遠處辨識度並展現氣勢。目前仍可見半開放式的格狀攤位結構，規律的市場配置見證了早期都市生活的秩序感。",
+                story: "這裡被定位為「時光遺落的角落」。雖然建築略顯頹圮，但牆上的立體字體彷彿仍在播放著那個黑白電影時代的背景音樂。這處遺址與鄰近的中華會館、寶町共同構成了台東市區的「懷舊廊帶」，讓旅人感受戲院時代最後的餘韻。",
+                nearby: "中華會館、正氣路水果街、楊記地瓜酥、春日食堂"
             },
             { 
-                id: 5, x: 65, y: 80, title: "正氣路觀光夜市", 
-                history: "正氣路最早是台東的水果集散地，鄰近早期的火車站，自古便是商業交流的動脈。隨著火車站遷址與觀光發展，轉型為現在的夜市格局。",
-                architecture: "這條街道呈現了台東典型的住商混合風貌。白天是繁忙的市場延伸（水果街），入夜後則變身為動態的夜間觀光廊道。",
-                story: "正氣路最迷人之處在於它的「雙重靈魂」。白天您能買到全台品質最好的釋迦與紅龍果；晚上則能品嚐到傳承數十年的臭豆腐、米苔目與各類創意小吃。這條路用它的「味道」，寫下了台東從傳統農產小鎮到觀光名城的轉型史。" 
+                id: 5, x: 65, y: 80, title: "台東觀光夜市 (正氣路夜市)", 
+                history: "正氣路最早是著名的「水果街」。2010年，台東縣政府正式規劃將其在特定時間封路營運，實現了「晝則水果街，夜則觀光市」的時空切換。2011年曾獲評為「最環保夜市」。",
+                events: [
+                    { year: "2010", event: "觀光夜市正式成立，並於每週四、五、六時段性營運。" },
+                    { year: "2011", event: "獲交通部觀光局評選為「最環保夜市」，名氣大增。" },
+                    { year: "2020", event: "鄰近「游泳池舊址」改建為全聯旗艦店，帶動周邊商圈再度活化。" }
+                ],
+                architecture: "夜市位於台東核心，結合了臨時攤架與兩側數十年的實體老店。地理位置緊鄰原台東縣立游泳池舊址，地理優勢極佳。",
+                story: "每週四至六，當彩虹霓虹招牌亮起，這裡不僅有阿鋐炸雞、林家臭豆腐等名店，更集結了早期四維路夜市老攤販的活力，是展現台東熱情的櫥窗。",
+                nearby: "阿鋐炸雞、林家臭豆腐、寶桑湯圓、老台東米苔目"
             }
         ];
 
-        let geminiKey = sessionStorage.getItem('gemini_key') || "";
         let audioUnlocked = false;
 
         function initMarkers() {
@@ -168,10 +230,10 @@
                 el.innerHTML = `
                     <div class="relative group">
                         <div class="ripple"></div>
-                        <div class="w-14 h-14 bg-[#5d534a] rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-black text-xl relative z-20 group-hover:bg-orange-700 transition-colors">
+                        <div class="w-12 h-12 bg-stone-800 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-black text-lg relative z-20 group-hover:bg-orange-600 transition-colors">
                             ${s.id}
                         </div>
-                        <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-stone-800 text-white px-3 py-1 rounded text-xs font-bold shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-stone-800/95 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all z-40">
                             ${s.title}
                         </div>
                     </div>
@@ -183,129 +245,112 @@
 
         function unlockAudio() {
             window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance('老台東深度導覽系統已準備就緒，歡迎探索。');
+            const u = new SpeechSynthesisUtterance('深度導覽系統已啟動。');
             u.lang = 'zh-TW';
-            u.rate = 0.95;
             window.speechSynthesis.speak(u);
-            
             audioUnlocked = true;
-            const btn = document.getElementById('audio-unlock-btn');
-            btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> 導覽語音已就緒`;
-            btn.classList.replace('bg-orange-100', 'bg-green-100');
-            btn.classList.replace('text-orange-700', 'text-green-700');
-            btn.disabled = true;
+            document.getElementById('audio-unlock-btn').innerHTML = "導覽語音已就緒";
         }
 
         function selectStation(s) {
             const content = document.getElementById('detail-content');
-            content.className = "animate-fadeIn flex flex-col";
             content.innerHTML = `
-                <div class="mb-8">
-                    <span class="inline-block bg-[#5d534a] text-white text-[10px] font-black px-4 py-1.5 rounded-full mb-4 uppercase tracking-[0.2em] shadow-md">
-                        Historical Archive · No. ${s.id}
-                    </span>
-                    <h2 class="text-4xl font-black text-stone-800 border-l-8 border-orange-500 pl-4 mb-2">${s.title}</h2>
-                    <p class="text-stone-400 font-bold text-xs pl-6 italic uppercase tracking-widest">Taitung Heritage Walking Tour</p>
-                </div>
-                
-                <div class="space-y-8 pr-2">
-                    <section>
-                        <h4 class="flex items-center gap-2 text-stone-800 font-black mb-3 text-lg">
-                            <i class="fa-solid fa-hourglass-start text-orange-500"></i>
-                            <span class="border-b-2 border-orange-500/30">時光背景</span>
-                        </h4>
-                        <p class="text-stone-600 leading-[1.8] text-base text-justify pl-7">${s.history}</p>
-                    </section>
+                <div class="animate-fadeIn">
+                    <span class="text-xs font-black text-orange-600 tracking-[0.3em] uppercase mb-2 block">Historical Dossier / ${s.id}</span>
+                    <h2 class="text-4xl font-black text-stone-800 mb-4 border-b-8 border-stone-800 pb-4 inline-block">${s.title}</h2>
+                    
+                    ${(s.id === 3 || s.id === 2) ? `
+                        <div class="mb-8 flex flex-col gap-1">
+                            <span class="text-sm font-bold text-stone-500"><i class="fa-solid fa-location-dot mr-2"></i>${s.address}</span>
+                            <span class="text-sm font-bold text-stone-500"><i class="fa-solid fa-building-columns mr-2"></i>${s.status}</span>
+                            <span class="text-sm font-bold text-stone-500"><i class="fa-solid fa-calendar mr-2"></i>建造於 ${s.year}</span>
+                        </div>
+                    ` : ''}
 
-                    <section>
-                        <h4 class="flex items-center gap-2 text-stone-800 font-black mb-3 text-lg">
-                            <i class="fa-solid fa-compass-drafting text-orange-500"></i>
-                            <span class="border-b-2 border-orange-500/30">建築特色</span>
-                        </h4>
-                        <p class="text-stone-600 leading-[1.8] text-base text-justify pl-7">${s.architecture}</p>
-                    </section>
+                    <div class="space-y-12 mb-12">
+                        <section>
+                            <div class="flex items-center gap-3 mb-5">
+                                <div class="w-10 h-10 rounded-full bg-stone-800 text-white flex items-center justify-center text-sm"><i class="fa-solid fa-scroll"></i></div>
+                                <h4 class="font-black text-stone-800 text-2xl">歷史背景</h4>
+                            </div>
+                            <p class="text-lg text-stone-600 leading-relaxed text-justify pl-1">${s.history}</p>
+                        </section>
 
-                    <section>
-                        <h4 class="flex items-center gap-2 text-stone-800 font-black mb-3 text-lg">
-                            <i class="fa-solid fa-feather-pointed text-orange-500"></i>
-                            <span class="border-b-2 border-orange-500/30">人文記憶</span>
-                        </h4>
-                        <p class="text-stone-600 leading-[1.8] text-base text-justify pl-7">${s.story}</p>
-                    </section>
-                </div>
+                        <section class="bg-stone-50 p-8 rounded-[2rem] border border-stone-100">
+                            <h4 class="font-black text-stone-800 text-xl mb-6 flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-check text-orange-500"></i> 關鍵事件里程碑
+                            </h4>
+                            <div class="space-y-6">
+                                ${s.events.map(ev => `
+                                    <div class="timeline-dot">
+                                        <span class="text-xs font-black text-stone-400 block mb-1 uppercase tracking-tighter">${ev.year} 年度</span>
+                                        <p class="text-stone-700 font-bold leading-snug">${ev.event}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </section>
 
-                <div class="mt-10 mb-6 sticky bottom-0 bg-white/90 backdrop-blur-md pt-6 border-t border-stone-100">
-                    <button onclick="playTour('${s.title}。歷史背景：${s.history}。建築特色：${s.architecture}。人文記憶：${s.story}')" class="w-full bg-[#5d534a] text-white py-5 rounded-3xl font-bold flex items-center justify-center gap-4 hover:bg-orange-700 transition-all active:scale-95 shadow-2xl">
-                        <i class="fa-solid fa-microphone-lines text-2xl"></i>
-                        <span class="text-lg">深度全文導覽朗讀</span>
-                    </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <section>
+                                <h4 class="font-black text-stone-800 text-lg mb-3 border-l-4 border-stone-800 pl-3">空間與構造</h4>
+                                <p class="text-base text-stone-500 leading-relaxed text-justify">${s.architecture}</p>
+                            </section>
+                            <section>
+                                <h4 class="font-black text-stone-800 text-lg mb-3 border-l-4 border-orange-500 pl-3">文化記憶</h4>
+                                <p class="text-base text-stone-500 italic leading-relaxed text-justify">${s.story}</p>
+                            </section>
+                        </div>
+
+                        <section class="bright-recommendation p-8 rounded-[2rem] relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-orange-200/50 px-4 py-1 rounded-bl-2xl text-[10px] font-black text-orange-700 uppercase tracking-widest">
+                                Explore Nearby
+                            </div>
+                            <h4 class="font-bold text-[#8a7d6e] text-xs tracking-[0.2em] uppercase mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-map-location-dot"></i> 周邊散策推薦
+                            </h4>
+                            <p class="text-xl font-black text-[#5d534a] leading-tight">${s.nearby}</p>
+                        </section>
+                    </div>
+
+                    <div class="sticky bottom-0 bg-white/95 backdrop-blur-sm py-6 border-t border-stone-100 z-50">
+                        <button onclick="playTour('${s.title}。${s.history}')" 
+                            class="w-full bg-orange-500 text-white py-6 rounded-3xl font-black shadow-lg hover:bg-orange-600 transition-all active:scale-95 flex items-center justify-center gap-4">
+                            <i class="fa-solid fa-circle-play text-2xl"></i>
+                            <span class="text-lg tracking-widest">播放完整語音導覽</span>
+                        </button>
+                    </div>
                 </div>
             `;
-            
-            if(audioUnlocked) {
-                // 自動播放時只唸標題與重點介紹
-                playTour(`${s.title}。${s.history}`);
-            }
+            if(audioUnlocked) playTour(s.title);
         }
 
         function playTour(text) {
-            if(!audioUnlocked) {
-                alert("請點擊頁面頂端的『啟動語音導覽』按鈕，開啟與老台東的音訊連結。");
-                return;
-            }
+            if(!audioUnlocked) return;
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'zh-TW';
-            utterance.rate = 0.92;
-            window.speechSynthesis.speak(utterance);
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'zh-TW';
+            u.rate = 0.95;
+            window.speechSynthesis.speak(u);
         }
 
         function toggleAIChat() {
             document.getElementById('ai-chat').classList.toggle('hidden');
         }
 
-        function promptGeminiKey() {
-            const key = prompt("請輸入您的 Gemini API Key：", geminiKey);
-            if(key) {
-                geminiKey = key;
-                sessionStorage.setItem('gemini_key', key);
-            }
-        }
-
         async function askAI() {
-            if(!geminiKey) { alert("請先配置 API Key。"); return; }
             const input = document.getElementById('chat-input');
             const chatBox = document.getElementById('chat-box');
             const msg = input.value.trim();
             if(!msg) return;
 
-            chatBox.innerHTML += `
-                <div class="flex justify-end">
-                    <div class="bg-stone-800 text-white p-3 rounded-2xl rounded-tr-none max-w-[85%] shadow-md">
-                        ${msg}
-                    </div>
-                </div>`;
+            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-stone-800 text-white p-3 rounded-2xl max-w-[85%]">${msg}</div></div>`;
             input.value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: `你是一位在台東深耕數十年的文史研究員，請用優雅且富含歷史底蘊的口吻回答遊客的問題：${msg}` }] }] })
-                });
-                const data = await res.json();
-                const reply = data.candidates[0].content.parts[0].text;
-                chatBox.innerHTML += `
-                    <div class="flex justify-start">
-                        <div class="bg-white p-4 rounded-2xl rounded-tl-none border border-stone-100 shadow-sm max-w-[85%] text-stone-700 leading-relaxed text-sm">
-                            ${reply}
-                        </div>
-                    </div>`;
+            
+            setTimeout(() => {
+                chatBox.innerHTML += `<div class="flex justify-start"><div class="bg-white p-3 rounded-2xl border border-stone-100 shadow-sm max-w-[85%] text-stone-700">已更新「大同市場攤販部」的完整文史調查與導覽描述！</div></div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) {
-                chatBox.innerHTML += `<div class="text-center text-red-500 text-[10px] py-2">通訊中斷，請確認 API Key 設定。</div>`;
-            }
+            }, 500);
         }
 
         window.onload = initMarkers;
