@@ -3,30 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>【時光脈動・老台東】智慧導覽 v12.0</title>
+    <title>【時光脈動・老台東】智慧導覽 v28.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Oswald:wght@500&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f8f5f0; color: #4a443f; -webkit-tap-highlight-color: transparent; }
         
+        .oswald { font-family: 'Oswald', sans-serif; }
+
         .map-bg {
             background-color: #eaddca;
             background-image: 
                 linear-gradient(90deg, rgba(212,196,174,0.3) 1px, transparent 1px),
                 linear-gradient(rgba(212,196,174,0.3) 1px, transparent 1px);
             background-size: 20px 20px;
-            position: relative;
-            overflow: hidden;
-            border-radius: 2rem;
-            border: 4px solid #fff;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            position: relative; overflow: hidden; border-radius: 2rem; border: 4px solid #fff; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
         }
 
         .street { 
-            position: absolute; 
-            background: rgba(255, 253, 250, 0.8); 
-            backdrop-filter: blur(2px);
+            position: absolute; background: rgba(255, 253, 250, 0.8); backdrop-filter: blur(2px);
             display: flex; align-items: center; justify-content: center;
             font-size: 11px; color: #a39689; font-weight: bold; letter-spacing: 2px;
             pointer-events: none; z-index: 1; border-radius: 4px;
@@ -36,8 +32,7 @@
 
         .station-marker {
             position: absolute; transform: translate(-50%, -50%);
-            cursor: pointer; z-index: 20;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer; z-index: 20; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes ripple {
@@ -45,10 +40,24 @@
             100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
         }
         .ripple { position: absolute; border: 2px solid #ea580c; border-radius: 50%; animation: ripple 2s infinite; }
-
         .active-scale:active { transform: scale(0.95); }
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4c4ae; border-radius: 10px; }
+        
+        .control-panel {
+            background: linear-gradient(to top, white 80%, rgba(255,255,255,0));
+        }
+
+        .dossier-badge {
+            background: #4a443f;
+            color: #eaddca;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -56,19 +65,19 @@
     <div class="max-w-6xl mx-auto">
         <header class="mb-8 text-center">
             <h1 class="text-4xl md:text-5xl font-black text-[#5d534a] mb-2 tracking-tighter">時光脈動・老台東</h1>
-            <p class="text-stone-500 font-medium tracking-[0.2em] text-xs uppercase">智慧領隊系統 · 全功能暫停重播版</p>
+            <p class="text-stone-500 font-medium tracking-[0.2em] text-xs uppercase">智慧領隊系統 · 歷史檔案總覽 v28.0</p>
             
             <div class="mt-6">
-                <button onclick="unlockAudio(true)" id="audio-unlock-btn" class="bg-orange-600 text-white px-10 py-4 rounded-full font-bold shadow-lg flex items-center mx-auto active-scale transition-all">
-                    <i class="fa-solid fa-volume-high mr-2 text-xl"></i> 啟動智慧領隊
+                <button onclick="unlockAudio(true)" id="audio-unlock-btn" class="bg-orange-600 text-white px-10 py-4 rounded-full font-bold shadow-lg flex items-center mx-auto active-scale transition-all hover:bg-orange-700">
+                    <i class="fa-solid fa-volume-high mr-2 text-xl"></i> 啟動智慧領隊導覽
                 </button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- 地圖區域 -->
+            <!-- 左側地圖區 -->
             <div class="lg:col-span-5 relative">
-                <div class="map-bg h-[450px] md:h-[700px]">
+                <div class="map-bg h-[450px] md:h-[750px]">
                     <div class="street street-v left-[15%]">中 山 路</div>
                     <div class="street street-v left-[50%]">中 正 路</div>
                     <div class="street street-v left-[85%]">光 明 路</div>
@@ -77,40 +86,43 @@
                     <div id="markers-container"></div>
                 </div>
 
-                <!-- 據點上方浮動暫停鍵 -->
-                <div id="map-mini-control" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-4 py-2 rounded-full shadow-xl z-30 border border-orange-100 flex items-center gap-3">
-                    <span id="mini-title" class="text-xs font-bold text-stone-700 truncate max-w-[100px]">導覽中</span>
-                    <div class="h-4 w-[1px] bg-stone-300"></div>
-                    <button onclick="togglePauseResume()" class="text-orange-600 p-1 active-scale">
-                        <i id="mini-pause-icon" class="fa-solid fa-pause"></i>
+                <!-- 地圖迷你控制列 -->
+                <div id="map-mini-control" class="hidden absolute top-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-3 rounded-full shadow-2xl z-30 border border-orange-100 flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <span id="mini-dossier" class="text-[9px] text-orange-600 font-bold uppercase oswald tracking-widest">Dossier / -</span>
+                        <span id="mini-title" class="text-sm font-black text-stone-700 truncate max-w-[120px]">點擊據點</span>
+                    </div>
+                    <div class="h-8 w-[1px] bg-stone-200"></div>
+                    <button onclick="togglePauseResume()" class="text-stone-800 hover:text-orange-600 transition-colors">
+                        <i id="mini-pause-icon" class="fa-solid fa-pause text-xl"></i>
+                    </button>
+                    <button onclick="replayCurrent()" class="text-stone-400 hover:text-stone-800 transition-colors">
+                        <i class="fa-solid fa-rotate-right text-lg"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- 詳細介紹區域 -->
+            <!-- 右側詳情區 -->
             <div class="lg:col-span-7">
-                <div id="detail-card" class="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-stone-100 h-[500px] md:h-[700px] flex flex-col relative overflow-hidden">
-                    <div id="detail-content" class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div id="detail-card" class="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-stone-100 h-[500px] md:h-[750px] flex flex-col relative overflow-hidden">
+                    <div id="detail-content" class="flex-1 overflow-y-auto custom-scrollbar pr-2 pb-32">
                         <div class="h-full flex flex-col justify-center text-center py-10">
-                            <i class="fa-solid fa-map-marked-alt text-7xl text-stone-100 mb-8 block"></i>
-                            <h3 class="text-2xl font-black text-stone-400">請先啟動並點擊標記</h3>
-                            <p class="text-stone-400 mt-4 leading-loose max-w-sm mx-auto">
-                                點擊地圖編號，聆聽各景點詳細歷史、特色與美食。
-                            </p>
+                            <i class="fa-solid fa-folder-open text-7xl text-stone-100 mb-8 block"></i>
+                            <h3 class="text-2xl font-black text-stone-400 oswald">HISTORICAL DOSSIERS</h3>
+                            <p class="text-stone-300 mt-4">請啟動導覽並點擊地圖標記 1-5</p>
                         </div>
                     </div>
 
-                    <!-- 下方主控台：暫停按鈕 + 重播按鈕 -->
-                    <div id="main-control-bar" class="hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-6 px-6 md:px-10 z-20">
+                    <!-- 主控制欄 -->
+                    <div id="main-control-bar" class="hidden absolute bottom-0 left-0 right-0 control-panel pt-12 pb-8 px-6 md:px-10 z-20">
                         <div class="flex gap-4">
-                            <!-- 暫停/繼續導覽 -->
-                            <button id="main-play-pause-btn" onclick="togglePauseResume()" class="flex-1 bg-stone-800 text-white py-5 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-3 active-scale transition-all">
+                            <button id="main-play-pause-btn" onclick="togglePauseResume()" class="flex-[3] bg-stone-800 text-white py-5 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-3 active-scale transition-all hover:bg-stone-700">
                                 <i id="main-pause-icon" class="fa-solid fa-pause text-xl"></i>
-                                <span id="main-pause-text">暫停語音導覽</span>
+                                <span id="main-pause-text">暫停導覽解說</span>
                             </button>
-                            <!-- 重播鍵 -->
-                            <button onclick="playTour(currentText)" class="w-20 bg-stone-100 text-stone-500 py-5 rounded-2xl flex items-center justify-center active-scale shadow-sm">
+                            <button onclick="replayCurrent()" class="flex-1 bg-stone-100 text-stone-600 py-5 rounded-2xl flex items-center justify-center gap-2 active-scale shadow-sm font-bold hover:bg-stone-200 transition-all">
                                 <i class="fa-solid fa-rotate-right text-xl"></i>
+                                <span class="hidden md:inline">重播</span>
                             </button>
                         </div>
                     </div>
@@ -121,71 +133,147 @@
 
     <script>
         const stations = [
-            { id: 1, x: 20, y: 30, title: "台東市中央市場", history: "台東市中央市場的根源可追溯至日治時期，現今規模成形於1963年。它是東台灣最大的零售物資集散中心，更是台東人的靈魂胃袋。", features: "傳統公有市場結構，內部街道縱橫，保留了早期的建築格局與庶民氣息。", food: "阿鋐炸雞、傳統米苔目、市場內隱藏版新鮮海味。" },
-            { id: 2, x: 75, y: 20, title: "寶町藝文中心", history: "1936年落成，原為台東街役場高級官員宿舍。整建後保留了完整的黑瓦、雨淋板與日式庭園。", features: "日治時期官方建築典型，環境幽靜，是攝影愛好者與歷史迷的必訪地點。", food: "中正路老字號豆花、周邊文青咖啡廳、在地簡餐。" },
-            { id: 3, x: 50, y: 55, title: "台東中華會館", history: "1927年落成，磚木混合建築。曾是台東華僑組織的核心，也是地方抗日意識的集合地。", features: "中西合璧建築風格，見證台東多元族群融合與地方發展的歷史脈絡。", food: "神農茶、在地傳統麵攤、古早味冰品。" },
-            { id: 4, x: 15, y: 80, title: "大同戲院遺址", history: "1958年落成，曾是台東最豪華影城。2009年火災後退出歷史舞台，保留了老台東人的娛樂與約會回憶。", features: "早期娛樂地標遺址，雖然建築已毀，但仍是台東人共同的時代印記。", food: "大同路蔥油餅、楊記家傳地瓜酥。" },
-            { id: 5, x: 65, y: 80, title: "台東觀光夜市", history: "位於正氣路。晝則水果街，夜則觀光市。實現了時空變換的在地文化活化，是體驗台東生活力必到之處。", features: "全長數百公尺攤位排列，匯集了台東在地小吃與創意料理精華。", food: "東山鴨頭、烤肉割包、現切在地水果（釋迦、鳳梨）。" }
+            { 
+              id: 1, x: 20, y: 30, title: "台東市中央市場", dossier: "Historical Dossier / 1",
+              history: "台東市中央市場的根源可追溯至日治時期，當時規模較小。現今所見的宏大基地主要成形於戰後。1963年（民國52年），因應人口成長與都市擴張，政府正式啟用目前的現代化市場基地，確立了其作為東台灣最大零售物資集散中心的地緣戰略地位。", 
+              milestones: "1963 年度：中央市場正式遷至現址啟用，成為當時規劃最完善的市場。\n1990s 年度：愛心菜販陳樹菊女士在市場內的「員泰蔬菜」默默行善，引發國際關注。\n2010s 年度：市場進行多項內部更新與通風改善工程，維持台東「靈魂胃袋」之美譽。",
+              features: "建築採取典型的戰後公有零售市場空間佈局，擁有超過250個攤位。內部依業種區分為鮮魚、肉類、蔬果及南北貨雜貨區。特別保留了早期西服店、布莊與傳統修改衣物的空間，是觀察台灣常民生活的微型社會樣貌。", 
+              memory: "這裡是台東最真實的生活切片。清晨三、四點，當全市尚在沉睡，中央市場已燈火通明。陳樹菊女士奮鬥50餘年的攤位，更賦予了這個喧囂市場一種獨特的慈善光輝。",
+              food: "阿鋐炸雞、員泰蔬菜攤、楊記家傳地瓜酥。" 
+            },
+            { 
+              id: 2, x: 75, y: 20, title: "寶町藝文中心 (原街役場宿舍群)", dossier: "Historical Dossier / 2",
+              address: "台東縣台東市中山路182號",
+              tag: "台東縣歷史建築 / 原台東市長官邸及市役所宿舍",
+              year: "建造於 1936 年",
+              history: "這片建築群於1936年落成，當時稱為「寶町」，是台東街役場高級官員的職務宿舍區。其中規模最大者為當時的「街長官舍」。戰後由國民政府接收，轉為台東鎮長、市長官邸及職員宿舍。這組日式木構造建築群見證了台東行政核心區的空間變遷。", 
+              milestones: "1936 年度：寶町官員宿舍群正式落成。\n2000 年度：台東市公所爭取經費啟動修復工程。\n2004 年度：正式掛牌「寶町藝文中心」營運。",
+              features: "典型的日式傳統民居。特色包含架高防潮通風層、木造雨淋板牆面，以及灰色瓦片鋪設的切妻造屋頂。", 
+              memory: "走進寶町，可以感受到老台東寧靜優雅的氣息。",
+              food: "台東美術館、台東市公所、明隆春捲。" 
+            },
+            { 
+              id: 3, x: 50, y: 55, title: "台東中華會館", dossier: "Historical Dossier / 3",
+              address: "台東縣台東市中正路 143 號",
+              tag: "台東縣歷史建築（2002 年登錄）",
+              year: "建造於 1927 年",
+              history: "中華會館落成於1927年，是日治時期台東華僑團結與慈善救濟的中心。二戰期間此地實為台東華僑的抗日聯絡核心，曾發生著名的「中華會館事件」。戰後曾改組為「台灣建設協進社台東分社」。", 
+              milestones: "1927 年度：中華會館正式落成，由劉洋、鄭品聰等14位華僑先賢倡議成立。\n1937 年度：「中華會館事件」：中日戰爭爆發，日警逮捕多位華僑幹部。\n2002 年度：登錄為歷史建築，見證台東移民在夾縫中求團結的艱難歷史。",
+              features: "建築揉合西式巴洛克與RC加強磚造風格。二樓圓形山頭裝飾有稻穗與黨徽，設有帶拱心石裝飾的弧形拱窗。一樓招牌可見「臺東分社」等時代刻痕。", 
+              memory: "這裡是東台灣華僑精神的象徵。山牆上的稻穗圖騰與具歷史張力的匾額，靜靜訴說著台東僑界跨越世紀的團結與愛國情懷。",
+              food: "老台東米苔目、林家臭豆腐、久昂臭豆腐。" 
+            },
+            { 
+              id: 4, x: 15, y: 80, title: "大同市場攤販部 (原大同戲院遺址)", dossier: "Historical Dossier / 4",
+              history: "這座位於中正路上的建築為「大同市場攤販部」，原為「大同戲院」的附屬建築。戲院開幕於1958年，曾是台東最豪華的娛樂地標。1960-1980年代，因戲院帶來的人潮帶動了周邊商圈，逐漸聚集形成攤販部，是當時台東市極為繁華的生活與視聽娛樂核心。隨戲院於2009年火災歇業，此處轉向沒落，成為觀察「戲院共生商圈」興衰的最佳實例。", 
+              milestones: "1958 年度：大同戲院開幕，帶動周邊大同市場與附屬攤販部的繁榮。\n1980s 年度：台東影視娛樂全盛期，此處為居民採買與視聽生活之重心。\n2009 年度：大同戲院遭逢祝融歇業，周邊攤販部隨之凋零，現多轉作停車或閒置空間。",
+              features: "最顯著特色為建築上方保留的「大同市場攤販部」陽刻立體字樣。這種水泥浮雕字體在民國時期公有建築中相當盛行，旨在增加遠處辨識度並展現氣勢。目前仍可見半開放式的格狀攤位結構，規律的市場配置見證了早期都市生活的秩序感。", 
+              memory: "這裡被定位為「時光遺落的角落」。雖然建築略顯頹圮，但牆上的立體字體彷彿仍在播放著那個黑白電影時代的背景音樂。這處遺址與鄰近的中華會館、寶町共同構成了台東市區的「懷舊廊帶」，讓旅人感受戲院時代最後的餘韻。",
+              food: "中華會館、正氣路水果街、楊記地瓜酥、春日食堂。" 
+            },
+            { 
+              id: 5, x: 65, y: 80, title: "台東觀光夜市 (正氣路夜市)", dossier: "Historical Dossier / 5",
+              history: "正氣路最早是著名的「水果街」。2010年，台東縣政府正式規劃將其在特定時間封路營運，實現了「晝則水果街，夜則觀光市」的時空切換。2011年曾獲評為「最環保夜市」。", 
+              milestones: "2010 年度：觀光夜市正式成立，並於每週四、五、六時段性營運。\n2011 年度：獲交通部觀光局評選為「最環保夜市」，名氣大增。\n2020 年度：鄰近「游泳池舊址」改建為全聯旗艦店，帶動周邊商圈再度活化。",
+              features: "夜市位於台東核心，結合了臨時攤架與兩側數十年的實體老店。地理位置緊鄰原台東縣立游泳池舊址，地理優勢極佳。", 
+              memory: "每週四至六，當彩虹霓虹招牌亮起，這裡不僅有阿鋐炸雞、林家臭豆腐等名店，更集結了早期四維路夜市老攤販的活力，是展現台東熱情的櫥窗。",
+              food: "阿鋐炸雞、林家臭豆腐、寶桑湯圓、老台東米苔目。" 
+            }
         ];
 
-        let audioUnlocked = false;
-        let currentText = "";
-        let isPaused = false;
+        let audioUnlocked = false; 
+        let currentText = ""; 
+        let isPaused = false; 
         let speechSynth = window.speechSynthesis;
 
         function unlockAudio(showGreeting = false) {
-            speechSynth.cancel();
-            const silent = new SpeechSynthesisUtterance(' ');
-            silent.volume = 0;
-            speechSynth.speak(silent);
+            speechSynth.cancel(); 
+            const silent = new SpeechSynthesisUtterance(' '); 
+            silent.volume = 0; 
+            speechSynth.speak(silent); 
             audioUnlocked = true;
-            document.getElementById('audio-unlock-btn').className = "bg-green-600 text-white px-10 py-4 rounded-full font-bold shadow-lg flex items-center mx-auto transition-all";
-            document.getElementById('audio-unlock-btn').innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> 智慧領隊已就緒';
-            if (showGreeting) playTour('您好，智慧領隊已準備就緒，請點擊地圖編號開始導覽。');
+            
+            const btn = document.getElementById('audio-unlock-btn');
+            btn.className = "bg-green-600 text-white px-10 py-4 rounded-full font-bold shadow-lg flex items-center mx-auto transition-all";
+            btn.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> 智慧領隊已就緒，請點擊檔案標記';
+            
+            if (showGreeting) {
+                playTour('導覽系統已就緒。五份歷史檔案已精確植入，請點擊地圖標記展開穿越時空的探尋。');
+            }
         }
 
         function initMarkers() {
             const container = document.getElementById('markers-container');
             stations.forEach(s => {
-                const el = document.createElement('div');
-                el.className = 'station-marker';
-                el.style.left = s.x + '%'; el.style.top = s.y + '%';
-                el.innerHTML = `<div class="relative group"><div class="ripple"></div><div class="w-12 h-12 bg-stone-800 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-black text-lg group-hover:bg-orange-600 transition-all">${s.id}</div></div>`;
-                el.onclick = () => selectStation(s);
+                const el = document.createElement('div'); 
+                el.className = 'station-marker'; 
+                el.style.left = s.x + '%'; 
+                el.style.top = s.y + '%';
+                el.innerHTML = `
+                    <div class="relative group">
+                        <div class="ripple"></div>
+                        <div class="w-12 h-12 bg-stone-800 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-white font-black text-lg group-hover:bg-orange-600 transition-all">
+                            ${s.id}
+                        </div>
+                    </div>`;
+                el.onclick = () => selectStation(s); 
                 container.appendChild(el);
             });
         }
 
         function selectStation(s) {
-            if (!audioUnlocked) {
-                document.getElementById('audio-unlock-btn').classList.add('animate-bounce');
-                return;
-            }
-            currentText = `${s.title}。${s.history}。景點特色：${s.features}。美食推薦：${s.food}`;
+            if (!audioUnlocked) unlockAudio(false);
+            
+            currentText = `${s.dossier}。${s.title}。${s.history}。關鍵事件里程碑：${s.milestones}。空間與構造：${s.features}。文化記憶：${s.memory}。周邊散策推薦：${s.food}`;
             isPaused = false;
+
             document.getElementById('map-mini-control').classList.remove('hidden');
             document.getElementById('main-control-bar').classList.remove('hidden');
             document.getElementById('mini-title').innerText = s.title;
+            document.getElementById('mini-dossier').innerText = s.dossier;
             
             const content = document.getElementById('detail-content');
             content.innerHTML = `
-                <div class="animate-fadeIn pb-32">
-                    <h2 class="text-3xl font-black text-stone-800 mb-6 border-l-8 border-orange-600 pl-4">${s.title}</h2>
-                    <div class="space-y-8">
-                        <section><h4 class="font-bold text-stone-400 mb-2">【歷史背景】</h4><p class="text-lg text-stone-600 leading-relaxed">${s.history}</p></section>
-                        <section class="bg-stone-50 p-6 rounded-3xl"><h4 class="font-bold text-orange-600 mb-2">【周邊特色】</h4><p class="text-stone-600">${s.features}</p></section>
-                        <section class="bg-orange-50 p-6 rounded-3xl"><h4 class="font-bold text-orange-700 mb-2">【在地美食】</h4><p class="text-stone-700">${s.food}</p></section>
+                <div class="animate-[fadeIn_0.5s_ease-out]">
+                    <div class="dossier-badge oswald">${s.dossier}</div>
+                    <h2 class="text-3xl font-black text-stone-800 mb-2 border-l-8 border-orange-600 pl-4">${s.title}</h2>
+                    ${s.address ? `<p class="text-stone-500 font-bold mb-1 pl-4"><i class="fa-solid fa-location-dot mr-2"></i>${s.address}</p>` : ''}
+                    ${s.tag ? `<p class="text-orange-600 text-xs font-bold mb-1 pl-4 uppercase tracking-tighter">${s.tag}</p>` : ''}
+                    ${s.year ? `<p class="text-stone-400 text-xs font-bold mb-6 pl-4">${s.year}</p>` : ''}
+                    
+                    <div class="mt-8 space-y-8">
+                        <section>
+                            <h4 class="font-bold text-stone-400 mb-2 uppercase tracking-widest text-sm">【歷史背景】</h4>
+                            <p class="text-lg text-stone-600 leading-relaxed text-justify">${s.history}</p>
+                        </section>
+                        <section class="bg-stone-50 p-6 rounded-3xl border border-stone-100 shadow-inner">
+                            <h4 class="font-bold text-stone-700 mb-3 uppercase tracking-widest text-sm border-b pb-2">【關鍵事件里程碑】</h4>
+                            <p class="text-stone-600 leading-relaxed text-sm whitespace-pre-line">${s.milestones}</p>
+                        </section>
+                        <section>
+                            <h4 class="font-bold text-stone-400 mb-2 uppercase tracking-widest text-sm">【空間與構造】</h4>
+                            <p class="text-stone-600 leading-relaxed text-justify">${s.features}</p>
+                        </section>
+                        <section class="bg-stone-100 p-6 rounded-3xl border border-stone-200 shadow-inner">
+                            <h4 class="font-bold text-stone-500 mb-2 uppercase tracking-widest text-sm">【文化記憶】</h4>
+                            <p class="text-stone-700 italic leading-relaxed text-justify">${s.memory}</p>
+                        </section>
+                        <section class="bg-orange-50 p-6 rounded-3xl border border-orange-100">
+                            <h4 class="font-bold text-orange-700 mb-2 uppercase tracking-widest text-sm">【周邊散策推薦】</h4>
+                            <p class="text-stone-800 font-medium leading-relaxed">${s.food}</p>
+                        </section>
                     </div>
                 </div>`;
             playTour(currentText);
         }
 
         function playTour(text) {
-            speechSynth.cancel();
+            speechSynth.cancel(); 
             isPaused = false;
             setTimeout(() => {
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'zh-TW';
+                const u = new SpeechSynthesisUtterance(text); 
+                u.lang = 'zh-TW'; 
+                u.rate = 0.95;
                 u.onstart = () => updateUI(false);
                 u.onend = () => { if(!isPaused) updateUI(true, true); };
                 speechSynth.speak(u);
@@ -194,17 +282,21 @@
 
         function togglePauseResume() {
             if (speechSynth.speaking && !isPaused) {
-                speechSynth.pause();
-                isPaused = true;
+                speechSynth.pause(); 
+                isPaused = true; 
                 updateUI(true);
             } else if (isPaused) {
-                speechSynth.resume();
-                isPaused = false;
+                speechSynth.resume(); 
+                isPaused = false; 
                 setTimeout(() => { if(!speechSynth.speaking) playTour(currentText); }, 150);
                 updateUI(false);
-            } else {
-                playTour(currentText);
+            } else { 
+                playTour(currentText); 
             }
+        }
+
+        function replayCurrent() {
+            if (currentText) playTour(currentText);
         }
 
         function updateUI(paused, ended = false) {
@@ -216,12 +308,12 @@
             if (paused) {
                 if(mIcon) mIcon.className = "fa-solid fa-play";
                 if(mainIcon) mainIcon.className = "fa-solid fa-play text-xl";
-                if(mainText) mainText.innerText = ended ? "重新播放導覽" : "繼續播放";
+                if(mainText) mainText.innerText = ended ? "重播完整檔案" : "恢復導覽解說";
                 if(mainBtn) mainBtn.classList.replace('bg-stone-800', 'bg-orange-600');
             } else {
                 if(mIcon) mIcon.className = "fa-solid fa-pause";
                 if(mainIcon) mainIcon.className = "fa-solid fa-pause text-xl";
-                if(mainText) mainText.innerText = "暫停語音導覽";
+                if(mainText) mainText.innerText = "暫停導覽解說";
                 if(mainBtn) mainBtn.classList.replace('bg-orange-600', 'bg-stone-800');
             }
         }
